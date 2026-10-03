@@ -569,24 +569,6 @@ renderRandomMovies();
 initGenreSections();
 </script>
 
-<script>
-function createSlug(title) {
-    return title
-        .toLowerCase()
-        .replace(/[^a-z0-9 -]/g, '') // remove special characters
-        .replace(/\s+/g, '-')        // replace spaces with hyphens
-        .replace(/-+/g, '-');        // remove duplicate hyphens
-}
-
-function createMovieCard(item) {
-    const slug = createSlug(item.title);
-    // Link passes both the id/slug for retrieval, but watch.html cleans it up
-    const itemUrl = `watch.html?id=${encodeURIComponent(item.id)}&title=${slug}`;
-    
-    // ... rest of card building logic ...
-}
-</script>
-
 
 </body>
 </html>
