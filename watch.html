@@ -49,9 +49,10 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
         }
 
-        video {
+        iframe, video {
             width: 100%;
             height: 100%;
+            border: none;
             display: block;
         }
 
@@ -127,7 +128,6 @@
     </header>
 
     <main class="main-watch" id="main-content">
-        <!-- The video tag will be dynamically injected here -->
         <div class="video-container" id="video-wrapper"></div>
 
         <div class="details-container">
@@ -142,9 +142,9 @@
         </div>
     </main>
 
-    <!-- Load Data Files -->
-    <script src="movies.js"></script>
-    <script src="series.js"></script>
+    <!-- Load external JS data with cache-busting -->
+    <script src="movies.js?v=2"></script>
+    <script src="series.js?v=2"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -153,7 +153,6 @@
 
             const videoWrapper = document.getElementById("video-wrapper");
 
-            // Look up media item
             const allMovies = typeof movies !== "undefined" ? movies : [];
             const allSeries = typeof series !== "undefined" ? series : [];
 
@@ -171,22 +170,27 @@
                 return;
             }
 
-            // Set text details
             document.title = `${item.title} - StreamApp`;
             document.getElementById("title").textContent = item.title;
             document.getElementById("meta").textContent = `${item.year || ''} | ${item.genre || ''}`;
             document.getElementById("synopsis").textContent = item.synopsis || "No description available.";
 
-            // KEY FIX FOR ARCHIVE.ORG LINKS:
-            // Injecting a fresh <video> tag string forces the browser to evaluate redirects properly
+            // Universal Player Loader: handles iframe embeds and direct HTML5 videos dynamically
             function renderPlayer(videoUrl) {
                 if (!videoUrl) return;
-                videoWrapper.innerHTML = `
-                    <video controls autoplay playsinline style="width:100%; height:100%;">
-                        <source src="${videoUrl}" type="video/mp4">
-                        Your browser does not support HTML5 video.
-                    </video>
-                `;
+
+                if (videoUrl.includes("archive.org/embed/")) {
+                    videoWrapper.innerHTML = `
+                        <iframe src="${videoUrl}" allowfullscreen frameborder="0" width="100%" height="100%"></iframe>
+                    `;
+                } else {
+                    videoWrapper.innerHTML = `
+                        <video controls autoplay playsinline style="width:100%; height:100%;">
+                            <source src="${videoUrl}" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                    `;
+                }
             }
 
             if (foundMovie) {
@@ -210,7 +214,6 @@
                     epList.appendChild(btn);
                 });
 
-                // Load first episode
                 renderPlayer(foundSeries.episodes[0].url);
             }
         });
