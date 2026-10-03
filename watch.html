@@ -632,17 +632,6 @@
     });
     </script>
 
-<script>
-// Parse the movie/series ID from the URL query
-const urlParams = new URLSearchParams(window.location.search);
-const mediaId = urlParams.get('id');
-
-if (mediaId) {
-    // Dynamically update the browser address bar without reloading
-    const cleanUrl = `${window.location.origin}/watch/${encodeURIComponent(mediaId)}`;
-    window.history.replaceState({}, document.title, cleanUrl);
-}
-</script>
 
 
 </body>
