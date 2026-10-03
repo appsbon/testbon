@@ -220,7 +220,7 @@
             background: #1a1a1a;
             padding: 20px;
             border-radius: 8px;
-            display: none; /* hidden unless item is a series */
+            display: none;
         }
 
         .episodes-section h3 {
@@ -337,8 +337,9 @@
         </div>
     </main>
 
-    <!-- Load external movies data file -->
+    <!-- External Data Files -->
     <script src="movies.js"></script>
+    <script src="series.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -352,134 +353,142 @@
         const episodesGrid = document.getElementById('episodesGrid');
 
         function playVideo(videoUrl) {
+            if (!videoUrl) return;
             videoSource.src = videoUrl;
             video.load();
             video.play().catch(e => console.log('Autoplay prevented or paused:', e));
         }
 
+        // Combine all arrays into one lookup list
+        let allContent = [];
+        
         if (typeof movies !== "undefined" && Array.isArray(movies)) {
-            const item = movies.find(m => 
-                (m.id && String(m.id) === String(mediaId)) || 
-                (m.title && encodeURIComponent(m.title) === mediaId)
-            );
+            allContent = allContent.concat(movies);
+        }
+        
+        // Supports common variable names in series.js (series, tvSeries, or showList)
+        const seriesData = window.series || window.tvSeries || window.showList;
+        if (typeof seriesData !== "undefined" && Array.isArray(seriesData)) {
+            allContent = allContent.concat(seriesData);
+        }
 
-            if (item) {
-                document.getElementById("title").textContent = item.title || "Untitled";
-                document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
-                document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
-                
-                if (item.poster) {
-                    video.poster = item.poster;
-                }
+        const item = allContent.find(m => 
+            (m.id && String(m.id) === String(mediaId)) || 
+            (m.title && encodeURIComponent(m.title) === mediaId)
+        );
 
-                // Check if item is a Series or Movie
-                if (item.episodes && Array.isArray(item.episodes) && item.episodes.length > 0) {
-                    episodesSection.style.display = 'block';
+        if (item) {
+            document.getElementById("title").textContent = item.title || "Untitled";
+            document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
+            document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
+            
+            if (item.poster) {
+                video.poster = item.poster;
+            }
 
-                    // Group episodes by season
-                    const seasons = {};
-                    item.episodes.forEach(ep => {
-                        const sNum = ep.season || 1;
-                        if (!seasons[sNum]) seasons[sNum] = [];
-                        seasons[sNum].push(ep);
-                    });
+            // Handles series format 1: item.episodes = [{ season: 1, episode: 1, video: "..." }]
+            if (item.episodes && Array.isArray(item.episodes) && item.episodes.length > 0) {
+                episodesSection.style.display = 'block';
 
-                    // Populate Season Dropdown
-                    seasonSelect.innerHTML = '';
-                    Object.keys(seasons).forEach(sNum => {
-                        const opt = document.createElement('option');
-                        opt.value = sNum;
-                        opt.textContent = `Season ${sNum}`;
-                        seasonSelect.appendChild(opt);
-                    });
+                const seasons = {};
+                item.episodes.forEach(ep => {
+                    const sNum = ep.season || 1;
+                    if (!seasons[sNum]) seasons[sNum] = [];
+                    seasons[sNum].push(ep);
+                });
 
-                    function renderEpisodes(seasonNum) {
-                        episodesGrid.innerHTML = '';
-                        const currentEpisodes = seasons[seasonNum] || [];
+                seasonSelect.innerHTML = '';
+                Object.keys(seasons).forEach(sNum => {
+                    const opt = document.createElement('option');
+                    opt.value = sNum;
+                    opt.textContent = `Season ${sNum}`;
+                    seasonSelect.appendChild(opt);
+                });
 
-                        currentEpisodes.forEach((ep, index) => {
-                            const btn = document.createElement('button');
-                            btn.className = 'episode-btn';
-                            btn.textContent = ep.title || `Episode ${ep.episode || index + 1}`;
-                            
-                            btn.addEventListener('click', () => {
-                                document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
-                                btn.classList.add('active');
-                                playVideo(ep.video || ep.src);
-                            });
+                function renderEpisodes(seasonNum) {
+                    episodesGrid.innerHTML = '';
+                    const currentEpisodes = seasons[seasonNum] || [];
 
-                            episodesGrid.appendChild(btn);
+                    currentEpisodes.forEach((ep, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'episode-btn';
+                        btn.textContent = ep.title || `Episode ${ep.episode || index + 1}`;
+                        
+                        btn.addEventListener('click', () => {
+                            document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            playVideo(ep.video || ep.src || ep.url);
                         });
 
-                        // Play the first episode automatically on render
-                        if (currentEpisodes.length > 0) {
-                            const firstBtn = episodesGrid.querySelector('.episode-btn');
-                            if (firstBtn) firstBtn.classList.add('active');
-                            playVideo(currentEpisodes[0].video || currentEpisodes[0].src);
-                        }
-                    }
-
-                    seasonSelect.addEventListener('change', (e) => {
-                        renderEpisodes(e.target.value);
+                        episodesGrid.appendChild(btn);
                     });
 
-                    // Initial render for Season 1
-                    renderEpisodes(Object.keys(seasons)[0]);
-
-                } else if (item.seasons && Array.isArray(item.seasons)) {
-                    // Alternative data format: item.seasons = [{ season: 1, episodes: [...] }]
-                    episodesSection.style.display = 'block';
-                    seasonSelect.innerHTML = '';
-
-                    item.seasons.forEach((seasonObj, idx) => {
-                        const opt = document.createElement('option');
-                        opt.value = idx;
-                        opt.textContent = `Season ${seasonObj.season || idx + 1}`;
-                        seasonSelect.appendChild(opt);
-                    });
-
-                    function renderSeasonsFormat(seasonIdx) {
-                        episodesGrid.innerHTML = '';
-                        const eps = item.seasons[seasonIdx]?.episodes || [];
-
-                        eps.forEach((ep, epIdx) => {
-                            const btn = document.createElement('button');
-                            btn.className = 'episode-btn';
-                            btn.textContent = ep.title || `Episode ${ep.episode || epIdx + 1}`;
-
-                            btn.addEventListener('click', () => {
-                                document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
-                                btn.classList.add('active');
-                                playVideo(ep.video || ep.src);
-                            });
-
-                            episodesGrid.appendChild(btn);
-                        });
-
-                        if (eps.length > 0) {
-                            const firstBtn = episodesGrid.querySelector('.episode-btn');
-                            if (firstBtn) firstBtn.classList.add('active');
-                            playVideo(eps[0].video || eps[0].src);
-                        }
-                    }
-
-                    seasonSelect.addEventListener('change', (e) => {
-                        renderSeasonsFormat(e.target.value);
-                    });
-
-                    renderSeasonsFormat(0);
-
-                } else {
-                    // Standard Movie
-                    if (item.video) {
-                        videoSource.src = item.video;
-                        video.load();
+                    if (currentEpisodes.length > 0) {
+                        const firstBtn = episodesGrid.querySelector('.episode-btn');
+                        if (firstBtn) firstBtn.classList.add('active');
+                        playVideo(currentEpisodes[0].video || currentEpisodes[0].src || currentEpisodes[0].url);
                     }
                 }
+
+                seasonSelect.addEventListener('change', (e) => {
+                    renderEpisodes(e.target.value);
+                });
+
+                renderEpisodes(Object.keys(seasons)[0]);
+
+            // Handles series format 2: item.seasons = [{ season: 1, episodes: [...] }]
+            } else if (item.seasons && Array.isArray(item.seasons)) {
+                episodesSection.style.display = 'block';
+                seasonSelect.innerHTML = '';
+
+                item.seasons.forEach((seasonObj, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.textContent = `Season ${seasonObj.season || idx + 1}`;
+                    seasonSelect.appendChild(opt);
+                });
+
+                function renderSeasonsFormat(seasonIdx) {
+                    episodesGrid.innerHTML = '';
+                    const eps = item.seasons[seasonIdx]?.episodes || [];
+
+                    eps.forEach((ep, epIdx) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'episode-btn';
+                        btn.textContent = ep.title || `Episode ${ep.episode || epIdx + 1}`;
+
+                        btn.addEventListener('click', () => {
+                            document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            playVideo(ep.video || ep.src || ep.url);
+                        });
+
+                        episodesGrid.appendChild(btn);
+                    });
+
+                    if (eps.length > 0) {
+                        const firstBtn = episodesGrid.querySelector('.episode-btn');
+                        if (firstBtn) firstBtn.classList.add('active');
+                        playVideo(eps[0].video || eps[0].src || eps[0].url);
+                    }
+                }
+
+                seasonSelect.addEventListener('change', (e) => {
+                    renderSeasonsFormat(e.target.value);
+                });
+
+                renderSeasonsFormat(0);
 
             } else {
-                document.getElementById("title").textContent = "Item Not Found";
+                // Standard Movie
+                if (item.video || item.src) {
+                    videoSource.src = item.video || item.src;
+                    video.load();
+                }
             }
+
+        } else {
+            document.getElementById("title").textContent = "Item Not Found";
         }
 
         // Custom Player Controls Logic
