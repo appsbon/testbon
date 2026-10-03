@@ -15,27 +15,26 @@
         header a { color: #e50914; text-decoration: none; font-size: 24px; font-weight: bold; }
         .main-watch { max-width: 1280px; margin: 30px auto; padding: 0 20px; }
 
-        /* Custom Video Player Styling */
+        /* YouTube Style 16:9 Widescreen Video Player */
         .video-container {
             position: relative;
-            object-fit: cover;
+            width: 100%;
             max-width: 1280px;
-            height: 720px;
+            aspect-ratio: 16 / 9; /* Standard YouTube Landscape Ratio */
             overflow: hidden;
-            border: 5px solid #000;
-            border-radius: 10px;
-            background-color: black;
+            border-radius: 12px;
+            background-color: #000;
             margin: 0 auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
         }
 
         video {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* Fits 16:9 landscape perfectly */
             position: absolute;
             top: 0;
             left: 0;
-            transition: transform 0.3s ease;
         }
 
         .custom-play-btn {
@@ -43,14 +42,24 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             border: none;
-            color: white;
-            font-size: 40px;
-            padding: 20px;
+            color: #fff;
+            font-size: 36px;
+            width: 70px;
+            height: 70px;
             cursor: pointer;
             z-index: 15;
             border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .custom-play-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            background: rgba(229, 9, 20, 0.9);
         }
 
         .custom-play-btn.hidden {
@@ -63,24 +72,24 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.85));
             color: #fff;
             display: flex;
             align-items: center;
-            padding: 10px;
+            padding: 12px 15px;
             box-sizing: border-box;
             z-index: 10;
         }
 
         .play-btn, .volume-control, .fullscreen-btn {
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
             z-index: 15;
         }
 
         .fullscreen-btn {
             padding-left: 10px;
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
             z-index: 15;
         }
@@ -90,37 +99,40 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 10px;
+            margin: 0 15px;
         }
 
         .progress-bar {
-            width: 95%;
+            width: 100%;
             height: 5px;
             background: rgba(255, 255, 255, 0.3);
             position: relative;
             cursor: pointer;
+            border-radius: 3px;
         }
 
         .progress {
             height: 100%;
-            background: #fff;
+            background: #e50914;
             width: 0;
-            transition: width 0.1s;
+            border-radius: 3px;
+            transition: width 0.1s linear;
         }
 
         .buffered {
             height: 100%;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
             width: 0;
             position: absolute;
             top: 0;
             left: 0;
+            border-radius: 3px;
         }
 
         .progress-thumb {
-            width: 15px;
-            height: 15px;
-            background: #fff;
+            width: 14px;
+            height: 14px;
+            background: #e50914;
             border-radius: 50%;
             position: absolute;
             top: 50%;
@@ -135,11 +147,12 @@
         }
 
         .volume-slider {
-            width: 100px;
-            height: 5px;
+            width: 80px;
+            height: 4px;
             background: rgba(255, 255, 255, 0.3);
             position: relative;
             margin-left: 10px;
+            border-radius: 2px;
         }
 
         .volume-progress {
@@ -150,11 +163,12 @@
             top: 0;
             left: 0;
             z-index: 1;
+            border-radius: 2px;
         }
 
         .volume-thumb {
-            width: 15px;
-            height: 15px;
+            width: 12px;
+            height: 12px;
             background: #fff;
             border-radius: 50%;
             position: absolute;
@@ -166,9 +180,8 @@
 
         #loadingOverlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             display: flex;
@@ -180,12 +193,12 @@
         }
 
         .spinner {
-            border: 8px solid rgba(0, 0, 0, 0.1);
+            border: 6px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            border-top: 8px solid #ffffff;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+            border-top: 6px solid #e50914;
+            width: 45px;
+            height: 45px;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
@@ -194,23 +207,16 @@
         }
 
         /* Mobile Adjustments */
-        @media (max-width: 1280px) {
-            .video-container {
-                height: 300px;
-                overflow: hidden;
-                position: relative;
-            }
-            video {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                position: absolute;
-            }
-            .play-btn {
-                font-size: 20px;
-            }
+        @media (max-width: 768px) {
             .volume-slider {
                 display: none;
+            }
+            .media-title {
+                font-size: 22px;
+            }
+            .download-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
 
@@ -256,8 +262,45 @@
             font-weight: bold;
         }
 
-        .details-container { margin-top: 25px; background: #1f1f1f; padding: 25px; border-radius: 8px; }
-        .media-title { font-size: 28px; margin-bottom: 10px; }
+        .details-container { 
+            margin-top: 25px; 
+            background: #1f1f1f; 
+            padding: 25px; 
+            border-radius: 8px; 
+        }
+
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .media-title { font-size: 28px; }
+        
+        /* Download Button Styling */
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #e50914;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+
+        .download-btn:hover {
+            background-color: #b80710;
+        }
+
         .meta-info { color: #aaa; font-size: 14px; margin-bottom: 15px; }
         .synopsis { line-height: 1.6; color: #ddd; }
     </style>
@@ -269,10 +312,12 @@
     </header>
 
     <main class="main-watch">
-  
+        <!-- Optional Top Ad Slot -->
+        <div id="ad-slot-top" style="margin-bottom:30px;"></div>
 
+        <!-- 16:9 YouTube Style Video Container -->
         <div class="video-container">
-            <video disablePictureInPicture controlslist="nodownload" id="myVideo" oncontextmenu="return false;" preload="auto">
+            <video controlslist="nodownload" id="myVideo" oncontextmenu="return false;" preload="auto">
                <source id="videoSource" src="" type="video/mp4"></source>
                Your browser does not support the video tag.
             </video>
@@ -313,15 +358,16 @@
         </div>
 
         <div class="details-container">
-            <h1 class="media-title" id="title">Loading...</h1>
+            <div class="details-header">
+                <h1 class="media-title" id="title">Loading...</h1>
+                <!-- Download Button -->
+                <button class="download-btn" id="downloadBtn">
+                    <i class="fas fa-download"></i> Download Video
+                </button>
+            </div>
             <div class="meta-info" id="meta"></div>
             <p class="synopsis" id="synopsis"></p>
         </div>
-
-
-      <!-- Optional Top Ad Slot -->
-        <div id="ad-slot-top" style="margin-bottom:30px;"></div>
-
 
         <!-- Bottom Ad Slot -->
         <div id="ad-slot-bottom" style="margin-top:40px;"></div>
@@ -341,15 +387,38 @@
         const videoSource = document.getElementById('videoSource');
         const episodesSection = document.getElementById('episodesSection');
         const episodesGrid = document.getElementById('episodesGrid');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let currentVideoUrl = "";
 
         function playVideo(videoUrl) {
             if (!videoUrl) return;
+            currentVideoUrl = videoUrl;
             videoSource.src = videoUrl;
             video.load();
             video.play().catch(e => console.log('Autoplay prevented or paused:', e));
         }
 
-        // Aggregate movies and series data safely from all possible variable names
+        // Download trigger logic
+        downloadBtn.addEventListener('click', () => {
+            if (!currentVideoUrl) {
+                alert('No video available to download.');
+                return;
+            }
+
+            const titleText = document.getElementById('title').textContent.trim() || 'video';
+            const fileName = `${titleText.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+
+            const link = document.createElement('a');
+            link.href = currentVideoUrl;
+            link.download = fileName;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Aggregate movies and series data safely
         let allContent = [];
         
         if (typeof movies !== "undefined" && Array.isArray(movies)) {
@@ -360,9 +429,6 @@
         if (typeof seriesData !== "undefined" && Array.isArray(seriesData)) {
             allContent = allContent.concat(seriesData);
         }
-
-        console.log("Searching for URL ID:", mediaId);
-        console.log("Loaded Total Items:", allContent.length);
 
         // Case-insensitive and URL-decoded lookup
         const cleanMediaId = mediaId ? decodeURIComponent(mediaId).trim().toLowerCase() : "";
@@ -378,8 +444,9 @@
             document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
             document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
             
-            if (item.poster) {
-                video.poster = item.poster;
+            // Set 16:9 Landscape Poster/Thumbnail
+            if (item.poster || item.backdrop || item.thumbnail) {
+                video.poster = item.backdrop || item.poster || item.thumbnail;
             }
 
             // Extract all episodes flat array regardless of structure format
@@ -403,8 +470,6 @@
                 allEpisodes.forEach((ep, index) => {
                     const btn = document.createElement('button');
                     btn.className = 'episode-btn';
-                    
-                    // Display Title or Episode Number
                     btn.textContent = ep.title || `Episode ${ep.episode || index + 1}`;
                     
                     btn.addEventListener('click', () => {
@@ -422,7 +487,7 @@
                 playVideo(allEpisodes[0].video || allEpisodes[0].src || allEpisodes[0].url);
 
             } else {
-                // Single Video / Movie Fallback with Autoplay
+                // Single Video / Movie Fallback
                 const movieUrl = item.video || item.src || item.url;
                 if (movieUrl) {
                     playVideo(movieUrl);
@@ -431,7 +496,7 @@
 
         } else {
             document.getElementById("title").textContent = "Item Not Found";
-            console.error(`No matching item found for ID: "${mediaId}". Check series.js or movies.js IDs.`);
+            downloadBtn.style.display = "none";
         }
 
         // Custom Player Controls Logic

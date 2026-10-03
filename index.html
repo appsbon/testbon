@@ -181,11 +181,11 @@ body{
 }
 
 /* =========================
-   MOVIE GRID
+   MOVIE GRID (YouTube 16:9 Style)
 ========================= */
 .movie-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
     gap:22px;
 }
 
@@ -205,10 +205,11 @@ body{
     transform:translateY(-5px);
 }
 
+/* Standard YouTube Widescreen Landscape Aspect Ratio */
 .movie-poster{
     position:relative;
     width:100%;
-    aspect-ratio:2/3;
+    aspect-ratio:16 / 9;
     overflow:hidden;
     background:#181818;
     border-radius:8px;
@@ -242,8 +243,8 @@ body{
 }
 
 .play-overlay i{
-    width:58px;
-    height:58px;
+    width:50px;
+    height:50px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -251,7 +252,7 @@ body{
     border-radius:50%;
     background:#e50914;
     color:#fff;
-    font-size:23px;
+    font-size:20px;
 }
 
 .movie-info{
@@ -360,6 +361,9 @@ function createMovieCard(item) {
     const isSeries = !!item.episodes;
     const itemUrl = `watch.html?id=${encodeURIComponent(item.id)}`;
 
+    // Prefers landscape thumbnail fields (backdrop / thumbnail) over standard poster
+    const thumbnailSrc = item.backdrop || item.thumbnail || item.poster || 'https://via.placeholder.com/640x360?text=No+Image';
+
     const link = document.createElement("a");
     link.href = itemUrl;
     link.className = "movie-card-link";
@@ -367,7 +371,7 @@ function createMovieCard(item) {
     link.innerHTML = `
         <div class="movie-card">
             <div class="movie-poster">
-                <img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" loading="lazy">
+                <img src="${escapeHtml(thumbnailSrc)}" alt="${escapeHtml(item.title)}" loading="lazy">
                 <div class="play-overlay">
                     <i class="fa-solid fa-play"></i>
                 </div>
