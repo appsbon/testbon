@@ -39,6 +39,7 @@
             padding: 0 20px;
         }
 
+        /* Original Player Wrapper Layout */
         .video-container {
             position: relative;
             width: 100%;
@@ -46,14 +47,15 @@
             background-color: #000;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
         }
 
-        video {
+        .video-container video {
             width: 100%;
             height: 100%;
             display: block;
             object-fit: contain;
+            outline: none;
         }
 
         .details-container {
@@ -128,8 +130,8 @@
     </header>
 
     <main class="main-watch" id="main-content">
-        <!-- Video container where HTML5 video player is injected -->
-        <div class="video-container" id="video-wrapper"></div>
+        <!-- Exact Player Container from original Modal setup -->
+        <div class="video-container" id="player-container"></div>
 
         <div class="details-container">
             <h1 class="media-title" id="title">Loading...</h1>
@@ -143,16 +145,16 @@
         </div>
     </main>
 
-    <!-- Load external JS data with cache-busting -->
-    <script src="movies.js?v=3"></script>
-    <script src="series.js?v=3"></script>
+    <!-- Load external JS data -->
+    <script src="movies.js?v=4"></script>
+    <script src="series.js?v=4"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
             const mediaId = urlParams.get("id");
 
-            const videoWrapper = document.getElementById("video-wrapper");
+            const playerContainer = document.getElementById("player-container");
 
             const allMovies = typeof movies !== "undefined" ? movies : [];
             const allSeries = typeof series !== "undefined" ? series : [];
@@ -171,27 +173,27 @@
                 return;
             }
 
-            // Update Metadata
+            // Populate Metadata
             document.title = `${item.title} - StreamApp`;
             document.getElementById("title").textContent = item.title;
             document.getElementById("meta").textContent = `${item.year || ''} | ${item.genre || ''}`;
             document.getElementById("synopsis").textContent = item.synopsis || "No description available.";
 
-            // Dynamic HTML5 video player renderer
-            function renderPlayer(videoUrl) {
+            // Original Modal Player Injection Function
+            function renderOriginalPlayer(videoUrl, posterUrl) {
                 if (!videoUrl) return;
 
-                videoWrapper.innerHTML = `
-                    <video controls autoplay playsinline style="width:100%; height:100%;">
+                playerContainer.innerHTML = `
+                    <video controls autoplay playsinline poster="${posterUrl || ''}">
                         <source src="${videoUrl}" type="video/mp4">
                         Your browser does not support HTML5 video.
                     </video>
                 `;
             }
 
-            // Handle Movie or Series playback
+            // Execute playback initialization
             if (foundMovie) {
-                renderPlayer(foundMovie.video);
+                renderOriginalPlayer(foundMovie.video, foundMovie.poster);
             } else if (foundSeries && foundSeries.episodes && foundSeries.episodes.length > 0) {
                 const epContainer = document.getElementById("episodes-container");
                 const epList = document.getElementById("episode-list");
@@ -205,13 +207,13 @@
                     btn.addEventListener("click", () => {
                         document.querySelectorAll(".ep-btn").forEach(b => b.classList.remove("active"));
                         btn.classList.add("active");
-                        renderPlayer(ep.url);
+                        renderOriginalPlayer(ep.url, foundSeries.poster);
                     });
 
                     epList.appendChild(btn);
                 });
 
-                renderPlayer(foundSeries.episodes[0].url);
+                renderOriginalPlayer(foundSeries.episodes[0].url, foundSeries.poster);
             }
         });
     </script>
