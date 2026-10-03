@@ -633,20 +633,17 @@
     </script>
 
 <script>
-function createSlug(title) {
-    return title
-        .toLowerCase()
-        .replace(/[^a-z0-9 -]/g, '') // remove special characters
-        .replace(/\s+/g, '-')        // replace spaces with hyphens
-        .replace(/-+/g, '-');        // remove duplicate hyphens
-}
+// Parse the movie/series ID from the URL query
+const urlParams = new URLSearchParams(window.location.search);
+const mediaId = urlParams.get('id');
 
-function createMovieCard(item) {
-    const slug = createSlug(item.title);
-    // Link passes both the id/slug for retrieval, but watch.html cleans it up
-    const itemUrl = `watch.html?id=${encodeURIComponent(item.id)}&title=${slug}`;
-    
-    // ... rest of card building logic ...
+if (mediaId) {
+    // Strips 'm-' from the start of the ID (e.g., "m-avatar-2" becomes "avatar-2")
+    const cleanId = mediaId.replace(/^m-/, '');
+
+    // Dynamically update the browser address bar without reloading
+    const cleanUrl = `${window.location.origin}/watch/${encodeURIComponent(cleanId)}`;
+    window.history.replaceState({}, document.title, cleanUrl);
 }
 </script>
 
