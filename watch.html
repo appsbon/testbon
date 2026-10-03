@@ -49,11 +49,11 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
         }
 
-        iframe, video {
+        video {
             width: 100%;
             height: 100%;
-            border: none;
             display: block;
+            object-fit: contain;
         }
 
         .details-container {
@@ -128,6 +128,7 @@
     </header>
 
     <main class="main-watch" id="main-content">
+        <!-- Video container where HTML5 video player is injected -->
         <div class="video-container" id="video-wrapper"></div>
 
         <div class="details-container">
@@ -143,8 +144,8 @@
     </main>
 
     <!-- Load external JS data with cache-busting -->
-    <script src="movies.js?v=2"></script>
-    <script src="series.js?v=2"></script>
+    <script src="movies.js?v=3"></script>
+    <script src="series.js?v=3"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -170,29 +171,25 @@
                 return;
             }
 
+            // Update Metadata
             document.title = `${item.title} - StreamApp`;
             document.getElementById("title").textContent = item.title;
             document.getElementById("meta").textContent = `${item.year || ''} | ${item.genre || ''}`;
             document.getElementById("synopsis").textContent = item.synopsis || "No description available.";
 
-            // Universal Player Loader: handles iframe embeds and direct HTML5 videos dynamically
+            // Dynamic HTML5 video player renderer
             function renderPlayer(videoUrl) {
                 if (!videoUrl) return;
 
-                if (videoUrl.includes("archive.org/embed/")) {
-                    videoWrapper.innerHTML = `
-                        <iframe src="${videoUrl}" allowfullscreen frameborder="0" width="100%" height="100%"></iframe>
-                    `;
-                } else {
-                    videoWrapper.innerHTML = `
-                        <video controls autoplay playsinline style="width:100%; height:100%;">
-                            <source src="${videoUrl}" type="video/mp4">
-                            Your browser does not support HTML5 video.
-                        </video>
-                    `;
-                }
+                videoWrapper.innerHTML = `
+                    <video controls autoplay playsinline style="width:100%; height:100%;">
+                        <source src="${videoUrl}" type="video/mp4">
+                        Your browser does not support HTML5 video.
+                    </video>
+                `;
             }
 
+            // Handle Movie or Series playback
             if (foundMovie) {
                 renderPlayer(foundMovie.video);
             } else if (foundSeries && foundSeries.episodes && foundSeries.episodes.length > 0) {
