@@ -21,9 +21,7 @@ html, body {
     min-height: 100vh;
 }
 
-/* =========================
-   HEADER
-========================= */
+/* HEADER */
 .header {
     position: sticky;
     top: 0;
@@ -84,9 +82,7 @@ html, body {
     cursor: pointer;
 }
 
-/* =========================
-   MAIN CONTENT
-========================= */
+/* MAIN CONTENT */
 .main {
     max-width: 1400px;
     margin: auto;
@@ -115,9 +111,7 @@ html, body {
     vertical-align: -4px;
 }
 
-/* =========================
-   MOVIE GRID
-========================= */
+/* MOVIE GRID */
 .movie-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -205,9 +199,7 @@ html, body {
     margin-top: 6px;
 }
 
-/* =========================
-   PLAYER MODAL & PLAYER
-========================= */
+/* PLAYER MODAL */
 .player-modal {
     position: fixed;
     inset: 0;
@@ -442,9 +434,7 @@ html, body {
     margin-bottom: 8px;
 }
 
-/* =========================
-   MOBILE RESPONSIVENESS
-========================= */
+/* RESPONSIVE DESIGN */
 @media (max-width: 700px) {
     .header { padding: 12px 14px; }
     .header-inner { gap: 10px; }
@@ -477,7 +467,7 @@ html, body {
 
 <header class="header">
     <div class="header-inner">
-        <a href="#" class="logo" onclick="closePlayer();return false;">
+        <a href="#" class="logo" onclick="closePlayer(); return false;">
             MOVI<span>DOZ</span>
         </a>
         <div class="search">
@@ -513,7 +503,7 @@ html, body {
             <div id="noVideo" class="no-video">
                 <div>
                     <strong>Video source not configured</strong>
-                    Add a valid MP4 URL to this movie in the JavaScript movie list.
+                    Please add a valid MP4 URL for this movie.
                 </div>
             </div>
 
@@ -552,6 +542,7 @@ html, body {
 </div>
 
 <script>
+// Movies data array with complete URL entries
 const movies = [
     {
         title: "BAAGHI 4",
@@ -562,20 +553,21 @@ const movies = [
         video: "https://archive.org/download/balik-bayan_202610/BALIK%20BAYAN.mp4"
     },
     {
-        title: "MOVIE TITLE 2",
-        year: "2025",
-        genre: "Drama",
-        quality: "HD",
-        poster: "https://via.placeholder.com/600x900/202020/ffffff?text=MOVIE+2",
-        video: ""
+        title: "THE GODFATHER",
+        year: "1972",
+        genre: "Crime, Drama",
+        quality: "4K HD",
+        poster: "https://via.placeholder.com/600x900/1f1f1f/ffffff?text=THE+GODFATHER",
+        // Replace with your actual mp4 file link
+        video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
     },
     {
-        title: "MOVIE TITLE 3",
-        year: "2025",
-        genre: "Thriller",
+        title: "THE DARK KNIGHT",
+        year: "2008",
+        genre: "Action, Crime",
         quality: "1080P",
-        poster: "https://via.placeholder.com/600x900/252525/ffffff?text=MOVIE+3",
-        video: ""
+        poster: "https://via.placeholder.com/600x900/252525/ffffff?text=THE+DARK+KNIGHT",
+        video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
     }
 ];
 
@@ -602,7 +594,13 @@ function renderMovies(list) {
                 <div class="movie-meta">${escapeHtml(movie.year || "")}${movie.genre ? " • " + escapeHtml(movie.genre) : ""}</div>
             </div>
         `;
-        card.addEventListener("click", () => openPlayer(movie));
+        
+        // Modal Trigger Event handler
+        card.addEventListener("click", (e) => {
+            e.preventDefault();
+            openPlayer(movie);
+        });
+        
         movieGrid.appendChild(card);
     });
 }
@@ -616,12 +614,9 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
-/* =========================
-   PLAYER CONTROLS
-========================= */
+/* PLAYER MODAL LOGIC */
 const playerModal = document.getElementById("playerModal");
 const videoElement = document.getElementById("myVideo");
-const videoSource = document.getElementById("videoSource");
 const playerTitle = document.getElementById("playerTitle");
 const loadingSpinner = document.getElementById("loadingSpinner");
 const noVideo = document.getElementById("noVideo");
@@ -750,7 +745,7 @@ const videoContainer = document.getElementById("videoContainer");
 videoContainer.addEventListener("mousemove", showControls);
 videoContainer.addEventListener("touchstart", showControls);
 
-/* Progress Bar */
+/* Progress Bar Seeking */
 videoElement.addEventListener("timeupdate", () => {
     if (!isFinite(videoElement.duration) || videoElement.duration <= 0) return;
     const percentage = (videoElement.currentTime / videoElement.duration) * 100;
@@ -825,7 +820,7 @@ function updateVolumeIcon() {
 
 volumeButton.addEventListener("click", toggleMute);
 
-/* Fullscreen */
+/* Fullscreen Controls */
 async function toggleFullscreen() {
     try {
         if (!document.fullscreenElement) {
@@ -858,7 +853,7 @@ document.addEventListener("fullscreenchange", () => {
 
 videoContainer.addEventListener("contextmenu", (e) => e.preventDefault());
 
-/* Search Functionality */
+/* Search */
 const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input", () => {
     const query = searchInput.value.trim().toLowerCase();
@@ -868,7 +863,7 @@ searchInput.addEventListener("input", () => {
     renderMovies(filtered);
 });
 
-// Render initial movies
+// Render list on page load
 renderMovies(movies);
 </script>
 
