@@ -5,56 +5,219 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watch - StreamApp</title>
     
-    <!-- Video.js CSS Theme -->
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <link href="https://unpkg.com/@videojs/themes@1/dist/city/index.css" rel="stylesheet" />
+    <!-- FontAwesome Icons for Custom Controls -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
         body { background-color: #141414; color: #fff; padding-bottom: 50px; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background-color: #000; }
         header a { color: #e50914; text-decoration: none; font-size: 24px; font-weight: bold; }
-        .main-watch { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
-        
+        .main-watch { max-width: 1280px; margin: 30px auto; padding: 0 20px; }
+
+        /* Custom Video Player Styling */
         .video-container {
             position: relative;
+            object-fit: cover;
+            max-width: 1280px;
+            height: 720px;
+            overflow: hidden; /* Ensures no extra space outside the video shows */
+            border: 5px solid #000; /* Border with desired color and thickness */
+            border-radius: 10px;
+            background-color: black;
+            margin: 0 auto;
+        }
+
+        video {
             width: 100%;
-            aspect-ratio: 16 / 9;
-            background-color: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            height: 100%;
+            object-fit: cover; /* Ensures the video covers the container */
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .custom-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            font-size: 40px;
+            padding: 20px;
+            cursor: pointer;
+            z-index: 15;
+            border-radius: 50%;
+        }
+
+        .custom-play-btn.hidden {
+            display: none;
+        }
+
+        /* Controls styling */
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .play-btn, .volume-control, .fullscreen-btn {
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 15;
+        }
+
+        .fullscreen-btn {
+            padding-left: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 15;
+        }
+
+        .progress-bar-container {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 10px;
         }
 
-        /* Ensure Video.js fills container */
-        .video-js { width: 100% !important; height: 100% !important; }
+        .progress-bar {
+            width: 95%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress {
+            height: 100%;
+            background: #fff;
+            width: 0;
+            transition: width 0.1s;
+        }
+
+        .buffered {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            width: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .progress-thumb {
+            width: 15px;
+            height: 15px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+
+        .volume-slider-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .volume-slider {
+            width: 100px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            position: relative;
+            margin-left: 10px;
+        }
+
+        .volume-progress {
+            height: 100%;
+            background: #fff;
+            width: 0%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .volume-thumb {
+            width: 15px;
+            height: 15px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        #loadingOverlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 15;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+
+        .spinner {
+            border: 8px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 8px solid #ffffff;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1280px) {
+            .video-container {
+                height: 300px;
+                overflow: hidden;
+                position: relative;
+            }
+            video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                position: absolute;
+            }
+            .play-btn {
+                font-size: 20px;
+            }
+            .volume-slider {
+                display: none;
+            }
+        }
 
         .details-container { margin-top: 25px; background: #1f1f1f; padding: 25px; border-radius: 8px; }
         .media-title { font-size: 28px; margin-bottom: 10px; }
         .meta-info { color: #aaa; font-size: 14px; margin-bottom: 15px; }
         .synopsis { line-height: 1.6; color: #ddd; }
-        
-        .error-message {
-            text-align: center;
-            color: #aaa;
-            padding: 20px;
-        }
-        .error-message h2 {
-            color: #e50914;
-            margin-bottom: 10px;
-        }
-        .error-message a {
-            color: #fff;
-            display: inline-block;
-            margin-top: 15px;
-            padding: 10px 20px;
-            background: #e50914;
-            text-decoration: none;
-            border-radius: 4px;
-        }
     </style>
 </head>
 <body>
@@ -64,7 +227,40 @@
     </header>
 
     <main class="main-watch">
-        <div class="video-container" id="player-container"></div>
+        <div class="video-container">
+            <video controlslist="nodownload" id="myVideo" oncontextmenu="return false;" preload="auto">
+               <source id="videoSource" src="" type="video/mp4"></source>
+               Your browser does not support the video tag.
+            </video>
+            <button class="custom-play-btn" id="customPlayPauseButton"><i class="fas fa-play"></i></button>
+            <div class="controls">
+                <div class="play-btn" id="playPauseButton">
+                    <i class="fas fa-play"></i>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress"></div>
+                        <div class="progress-thumb" id="progressThumb"></div>
+                        <div class="buffered" id="buffered"></div>
+                    </div>
+                </div>
+                <div class="volume-slider-container">
+                    <div class="volume-control" id="volumeControl">
+                        <i class="fas fa-volume-up"></i>
+                    </div>
+                    <div class="volume-slider">
+                        <div class="volume-progress" id="volumeProgress"></div>
+                        <div class="volume-thumb" id="volumeThumb"></div>
+                    </div>
+                </div>
+                <div class="fullscreen-btn" id="fullscreenButton">
+                    <i class="fas fa-expand"></i>
+                </div>
+            </div>
+            <div id="loadingOverlay">
+                <div class="spinner"></div>
+            </div>
+        </div>
 
         <div class="details-container">
             <h1 class="media-title" id="title">Loading...</h1>
@@ -73,75 +269,172 @@
         </div>
     </main>
 
-    <!-- Video.js Library -->
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <!-- Load external movies data file -->
     <script src="movies.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mediaId = urlParams.get("id");
-            const playerContainer = document.getElementById("player-container");
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Load Movie Data from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const mediaId = urlParams.get("id");
 
-            // Make sure movies array exists in movies.js
-            if (typeof movies === "undefined" || !Array.isArray(movies)) {
-                showError("Configuration Error", "Unable to load movie data (movies.js is missing or invalid).");
-                return;
-            }
+        const video = document.getElementById('myVideo');
+        const videoSource = document.getElementById('videoSource');
 
-            // Find movie by matching ID (or title fallback if id is omitted)
+        if (typeof movies !== "undefined" && Array.isArray(movies)) {
+            // Find movie by matching ID or fallback to title matching
             const item = movies.find(m => 
                 (m.id && String(m.id) === String(mediaId)) || 
                 (m.title && encodeURIComponent(m.title) === mediaId)
             );
 
-            if (!item) {
-                showError("Movie Not Found", "The requested movie could not be found.");
-                return;
+            if (item) {
+                document.getElementById("title").textContent = item.title || "Untitled";
+                document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
+                document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
+                
+                if (item.poster) {
+                    video.poster = item.poster;
+                }
+                if (item.video) {
+                    videoSource.src = item.video;
+                    video.load();
+                }
+            } else {
+                document.getElementById("title").textContent = "Movie Not Found";
             }
+        }
 
-            // Set Details
-            document.getElementById("title").textContent = item.title || "Untitled";
-            document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
-            document.getElementById("synopsis").textContent = item.synopsis || "No description available.";
+        // 2. Custom Player Controls Logic
+        const customPlayPauseButton = document.getElementById('customPlayPauseButton');
+        const playPauseButton = document.getElementById('playPauseButton');
+        const progress = document.getElementById('progress');
+        const buffered = document.getElementById('buffered');
+        const progressThumb = document.getElementById('progressThumb');
+        const volumeControl = document.getElementById('volumeControl');
+        const volumeSlider = document.querySelector('.volume-slider');
+        const volumeProgress = document.getElementById('volumeProgress');
+        const volumeThumb = document.getElementById('volumeThumb');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        const progressBar = document.querySelector('.progress-bar');
+        
+        let isDragging = false;
+        let isVolumeDragging = false;
 
-            // Check if video link is present
-            if (!item.video || item.video.trim() === "") {
-                playerContainer.innerHTML = `
-                    <div class="error-message">
-                        <h2>No Stream Available</h2>
-                        <p>Video source is missing for this title.</p>
-                    </div>
-                `;
-                return;
+        function updatePlayPauseButton() {
+            const icon = video.paused || video.ended ? 'fa-play' : 'fa-pause';
+            playPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
+            customPlayPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
+        }
+
+        function togglePlay() {
+            if (video.paused || video.ended) {
+                video.play().catch(error => console.error('Play error:', error));
+            } else {
+                video.pause();
             }
+            updatePlayPauseButton();
+        }
 
-            // Safely destroy existing instance if re-initializing
-            if (videojs.getPlayers()['custom-player']) {
-                videojs.getPlayers()['custom-player'].dispose();
+        playPauseButton.addEventListener('click', togglePlay);
+        customPlayPauseButton.addEventListener('click', togglePlay);
+
+        video.addEventListener('timeupdate', () => {
+            if (video.duration) {
+                const percentage = (video.currentTime / video.duration) * 100;
+                progress.style.width = percentage + '%';
+                progressThumb.style.left = percentage + '%';
             }
-
-            // Inject video player element
-            playerContainer.innerHTML = `
-                <video id="custom-player" class="video-js vjs-theme-city" controls autoplay playsinline poster="${item.poster || ''}">
-                    <source src="${item.video}" type="video/mp4">
-                </video>
-            `;
-
-            // Initialize Video.js
-            videojs('custom-player');
         });
 
-        function showError(title, message) {
-            document.getElementById("title").textContent = title;
-            document.getElementById("player-container").innerHTML = `
-                <div class="error-message">
-                    <h2>${title}</h2>
-                    <p>${message}</p>
-                    <a href="index.html">Return to Home</a>
-                </div>
-            `;
+        video.addEventListener('progress', () => {
+            if (video.buffered.length > 0) {
+                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+                const bufferedPercentage = (bufferedEnd / video.duration) * 100;
+                buffered.style.width = bufferedPercentage + '%';
+            }
+        });
+
+        progressBar.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateProgress(e);
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            isVolumeDragging = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateProgress(e);
+            }
+            if (isVolumeDragging) {
+                updateVolume(e);
+            }
+        });
+
+        function updateProgress(e) {
+            const rect = progressBar.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+            progress.style.width = percentage + '%';
+            progressThumb.style.left = percentage + '%';
+            if (video.duration) {
+                video.currentTime = (percentage / 100) * video.duration;
+            }
         }
+
+        function updateVolume(e) {
+            const rect = volumeSlider.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+            volumeProgress.style.width = percentage + '%';
+            volumeThumb.style.left = percentage + '%';
+            video.volume = percentage / 100;
+        }
+
+        volumeControl.addEventListener('click', () => {
+            video.muted = !video.muted;
+            volumeControl.innerHTML = video.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+        });
+
+        volumeSlider.addEventListener('mousedown', (e) => {
+            isVolumeDragging = true;
+            updateVolume(e);
+        });
+
+        function setVolumeSlider() {
+            const volumePercentage = video.volume * 100;
+            volumeProgress.style.width = volumePercentage + '%';
+            volumeThumb.style.left = volumePercentage + '%';
+        }
+
+        fullscreenButton.addEventListener('click', () => {
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+        });
+
+        video.addEventListener('waiting', () => {
+            loadingOverlay.style.display = 'flex';
+        });
+
+        video.addEventListener('playing', () => {
+            loadingOverlay.style.display = 'none';
+        });
+
+        video.addEventListener('error', () => {
+            loadingOverlay.style.display = 'none';
+        });
+
+        setVolumeSlider();
+    });
     </script>
 </body>
 </html>
