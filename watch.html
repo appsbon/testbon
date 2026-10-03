@@ -633,17 +633,46 @@
     </script>
 
 <script>
-// Parse the movie/series ID from the URL query
+// 1. Get the original ID from the URL (includes m- or s-)
 const urlParams = new URLSearchParams(window.location.search);
 const mediaId = urlParams.get('id');
 
 if (mediaId) {
-    // Strips either 'm-' or 's-' from the beginning of the ID
-    const cleanId = mediaId.replace(/^(m|s)-/i, '');
+    // 2. Load movie/series data using the FULL mediaId (so episodes don't break)
+    loadMediaContent(mediaId);
 
-    // Dynamically update the browser address bar without reloading
+    // 3. Strip 'm-' or 's-' ONLY for display in the address bar
+    const cleanId = mediaId.replace(/^(m|s)-/i, '');
     const cleanUrl = `${window.location.origin}/watch/${encodeURIComponent(cleanId)}`;
-    window.history.replaceState({}, document.title, cleanUrl);
+    
+    // 4. Preserve the full mediaId inside the state object so internal re-renders still work
+    window.history.replaceState({ id: mediaId }, document.title, cleanUrl);
+}
+
+function loadMediaContent(id) {
+    // Check series array first if ID starts with 's-'
+    const isSeries = id.startsWith('s-');
+    let item = null;
+
+    if (isSeries && typeof series !== 'undefined') {
+        item = series.find(s => s.id === id);
+    } else if (typeof movies !== 'undefined') {
+        item = movies.find(m => m.id === id);
+    }
+
+    if (!item) {
+        // Fallback: search both arrays if not matched by prefix
+        const combined = [...(typeof movies !== 'undefined' ? movies : []), ...(typeof series !== 'undefined' ? series : [])];
+        item = combined.find(x => x.id === id);
+    }
+
+    if (!item) {
+        document.getElementById('contentContainer').innerHTML = '<h2>Item Not Found</h2>';
+        return;
+    }
+
+    // Render title, player, and episode buttons
+    renderPlayerAndEpisodes(item);
 }
 </script>
 
