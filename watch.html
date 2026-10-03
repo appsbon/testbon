@@ -378,258 +378,271 @@
     <script src="series.js"></script>
     <script src="ads.js"></script>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mediaId = urlParams.get("id");
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mediaId = urlParams.get("id");
 
-        const video = document.getElementById('myVideo');
-        const videoSource = document.getElementById('videoSource');
-        const episodesSection = document.getElementById('episodesSection');
-        const episodesGrid = document.getElementById('episodesGrid');
-        const downloadBtn = document.getElementById('downloadBtn');
+    const video = document.getElementById('myVideo');
+    const videoSource = document.getElementById('videoSource');
+    const episodesSection = document.getElementById('episodesSection');
+    const episodesGrid = document.getElementById('episodesGrid');
+    const downloadBtn = document.getElementById('downloadBtn');
 
-        let currentVideoUrl = "";
+    let currentVideoUrl = "";
 
-        function playVideo(videoUrl) {
-            if (!videoUrl) return;
-            currentVideoUrl = videoUrl;
-            videoSource.src = videoUrl;
-            video.load();
-            video.play().catch(e => console.log('Autoplay prevented or paused:', e));
+    function playVideo(videoUrl) {
+        if (!videoUrl) return;
+        currentVideoUrl = videoUrl;
+        
+        // Update both source tag and video element directly for maximum browser compatibility
+        videoSource.src = videoUrl;
+        video.src = videoUrl;
+        
+        video.load();
+        
+        // Trigger play and handle browser autoplay restrictions gracefully
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.log('Autoplay prevented by browser, click play button to watch:', e);
+                updatePlayPauseButton();
+            });
+        }
+    }
+
+    // Download trigger logic
+    downloadBtn.addEventListener('click', () => {
+        if (!currentVideoUrl) {
+            alert('No video available to download.');
+            return;
         }
 
-        // Download trigger logic
-        downloadBtn.addEventListener('click', () => {
-            if (!currentVideoUrl) {
-                alert('No video available to download.');
-                return;
-            }
+        const titleText = document.getElementById('title').textContent.trim() || 'video';
+        const fileName = `${titleText.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
 
-            const titleText = document.getElementById('title').textContent.trim() || 'video';
-            const fileName = `${titleText.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp4`;
+        const link = document.createElement('a');
+        link.href = currentVideoUrl;
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 
-            const link = document.createElement('a');
-            link.href = currentVideoUrl;
-            link.download = fileName;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+    // Aggregate movies and series data safely
+    let allContent = [];
+    
+    if (typeof movies !== "undefined" && Array.isArray(movies)) {
+        allContent = allContent.concat(movies);
+    }
+    
+    const seriesData = window.series || window.tvSeries || window.showList || (typeof series !== "undefined" ? series : undefined);
+    if (typeof seriesData !== "undefined" && Array.isArray(seriesData)) {
+        allContent = allContent.concat(seriesData);
+    }
 
-        // Aggregate movies and series data safely
-        let allContent = [];
+    // Case-insensitive and URL-decoded lookup
+    const cleanMediaId = mediaId ? decodeURIComponent(mediaId).trim().toLowerCase() : "";
+    
+    const item = allContent.find(m => {
+        const itemId = m.id ? String(m.id).trim().toLowerCase() : "";
+        const itemTitle = m.title ? String(m.title).trim().toLowerCase() : "";
+        return itemId === cleanMediaId || itemTitle === cleanMediaId;
+    });
+
+    if (item) {
+        document.getElementById("title").textContent = item.title || "Untitled";
+        document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
+        document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
         
-        if (typeof movies !== "undefined" && Array.isArray(movies)) {
-            allContent = allContent.concat(movies);
+        // Set 16:9 Landscape Poster/Thumbnail
+        if (item.poster || item.backdrop || item.thumbnail) {
+            video.poster = item.backdrop || item.poster || item.thumbnail;
         }
-        
-        const seriesData = window.series || window.tvSeries || window.showList || (typeof series !== "undefined" ? series : undefined);
-        if (typeof seriesData !== "undefined" && Array.isArray(seriesData)) {
-            allContent = allContent.concat(seriesData);
-        }
 
-        // Case-insensitive and URL-decoded lookup
-        const cleanMediaId = mediaId ? decodeURIComponent(mediaId).trim().toLowerCase() : "";
-        
-        const item = allContent.find(m => {
-            const itemId = m.id ? String(m.id).trim().toLowerCase() : "";
-            const itemTitle = m.title ? String(m.title).trim().toLowerCase() : "";
-            return itemId === cleanMediaId || itemTitle === cleanMediaId;
-        });
+        // Extract all episodes flat array regardless of structure format
+        let allEpisodes = [];
 
-        if (item) {
-            document.getElementById("title").textContent = item.title || "Untitled";
-            document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
-            document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
-            
-            // Set 16:9 Landscape Poster/Thumbnail
-            if (item.poster || item.backdrop || item.thumbnail) {
-                video.poster = item.backdrop || item.poster || item.thumbnail;
-            }
-
-            // Extract all episodes flat array regardless of structure format
-            let allEpisodes = [];
-
-            if (item.episodes && Array.isArray(item.episodes) && item.episodes.length > 0) {
-                allEpisodes = item.episodes;
-            } else if (item.seasons && Array.isArray(item.seasons)) {
-                item.seasons.forEach(seasonObj => {
-                    if (seasonObj.episodes && Array.isArray(seasonObj.episodes)) {
-                        allEpisodes = allEpisodes.concat(seasonObj.episodes);
-                    }
-                });
-            }
-
-            // Render Episodes Buttons if item is a series
-            if (allEpisodes.length > 0) {
-                episodesSection.style.display = 'block';
-                episodesGrid.innerHTML = '';
-
-                allEpisodes.forEach((ep, index) => {
-                    const btn = document.createElement('button');
-                    btn.className = 'episode-btn';
-                    btn.textContent = ep.title || `Episode ${ep.episode || index + 1}`;
-                    
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        playVideo(ep.video || ep.src || ep.url);
-                    });
-
-                    episodesGrid.appendChild(btn);
-                });
-
-                // Auto-play the first episode
-                const firstBtn = episodesGrid.querySelector('.episode-btn');
-                if (firstBtn) firstBtn.classList.add('active');
-                playVideo(allEpisodes[0].video || allEpisodes[0].src || allEpisodes[0].url);
-
-            } else {
-                // Single Video / Movie Fallback
-                const movieUrl = item.video || item.src || item.url;
-                if (movieUrl) {
-                    playVideo(movieUrl);
+        if (item.episodes && Array.isArray(item.episodes) && item.episodes.length > 0) {
+            allEpisodes = item.episodes;
+        } else if (item.seasons && Array.isArray(item.seasons)) {
+            item.seasons.forEach(seasonObj => {
+                if (seasonObj.episodes && Array.isArray(seasonObj.episodes)) {
+                    allEpisodes = allEpisodes.concat(seasonObj.episodes);
                 }
-            }
+            });
+        }
+
+        // Render Episodes Buttons if item is a series
+        if (allEpisodes.length > 0) {
+            episodesSection.style.display = 'block';
+            episodesGrid.innerHTML = '';
+
+            allEpisodes.forEach((ep, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'episode-btn';
+                btn.textContent = ep.title || `Episode ${ep.episode || index + 1}`;
+                
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    playVideo(ep.video || ep.src || ep.url);
+                });
+
+                episodesGrid.appendChild(btn);
+            });
+
+            // Auto-play the first episode
+            const firstBtn = episodesGrid.querySelector('.episode-btn');
+            if (firstBtn) firstBtn.classList.add('active');
+            playVideo(allEpisodes[0].video || allEpisodes[0].src || allEpisodes[0].url);
 
         } else {
-            document.getElementById("title").textContent = "Item Not Found";
-            downloadBtn.style.display = "none";
+            // Single Video / Movie Fallback - Calls playVideo() to trigger autoplay
+            const movieUrl = item.video || item.src || item.url;
+            if (movieUrl) {
+                playVideo(movieUrl);
+            }
         }
 
-        // Custom Player Controls Logic
-        const customPlayPauseButton = document.getElementById('customPlayPauseButton');
-        const playPauseButton = document.getElementById('playPauseButton');
-        const progress = document.getElementById('progress');
-        const buffered = document.getElementById('buffered');
-        const progressThumb = document.getElementById('progressThumb');
-        const volumeControl = document.getElementById('volumeControl');
-        const volumeSlider = document.querySelector('.volume-slider');
-        const volumeProgress = document.getElementById('volumeProgress');
-        const volumeThumb = document.getElementById('volumeThumb');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const fullscreenButton = document.getElementById('fullscreenButton');
-        const progressBar = document.querySelector('.progress-bar');
-        
-        let isDragging = false;
-        let isVolumeDragging = false;
+    } else {
+        document.getElementById("title").textContent = "Item Not Found";
+        downloadBtn.style.display = "none";
+    }
 
-        function updatePlayPauseButton() {
-            const icon = video.paused || video.ended ? 'fa-play' : 'fa-pause';
-            playPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
-            customPlayPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
+    // Custom Player Controls Logic
+    const customPlayPauseButton = document.getElementById('customPlayPauseButton');
+    const playPauseButton = document.getElementById('playPauseButton');
+    const progress = document.getElementById('progress');
+    const buffered = document.getElementById('buffered');
+    const progressThumb = document.getElementById('progressThumb');
+    const volumeControl = document.getElementById('volumeControl');
+    const volumeSlider = document.querySelector('.volume-slider');
+    const volumeProgress = document.getElementById('volumeProgress');
+    const volumeThumb = document.getElementById('volumeThumb');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    const progressBar = document.querySelector('.progress-bar');
+    
+    let isDragging = false;
+    let isVolumeDragging = false;
+
+    function updatePlayPauseButton() {
+        const icon = video.paused || video.ended ? 'fa-play' : 'fa-pause';
+        playPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
+        customPlayPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
+    }
+
+    function togglePlay() {
+        if (video.paused || video.ended) {
+            video.play().catch(error => console.error('Play error:', error));
+        } else {
+            video.pause();
         }
+        updatePlayPauseButton();
+    }
 
-        function togglePlay() {
-            if (video.paused || video.ended) {
-                video.play().catch(error => console.error('Play error:', error));
-            } else {
-                video.pause();
-            }
-            updatePlayPauseButton();
-        }
+    playPauseButton.addEventListener('click', togglePlay);
+    customPlayPauseButton.addEventListener('click', togglePlay);
 
-        playPauseButton.addEventListener('click', togglePlay);
-        customPlayPauseButton.addEventListener('click', togglePlay);
-
-        video.addEventListener('timeupdate', () => {
-            if (video.duration) {
-                const percentage = (video.currentTime / video.duration) * 100;
-                progress.style.width = percentage + '%';
-                progressThumb.style.left = percentage + '%';
-            }
-        });
-
-        video.addEventListener('progress', () => {
-            if (video.buffered.length > 0) {
-                const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-                const bufferedPercentage = (bufferedEnd / video.duration) * 100;
-                buffered.style.width = bufferedPercentage + '%';
-            }
-        });
-
-        progressBar.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            updateProgress(e);
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            isVolumeDragging = false;
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) updateProgress(e);
-            if (isVolumeDragging) updateVolume(e);
-        });
-
-        function updateProgress(e) {
-            const rect = progressBar.getBoundingClientRect();
-            const offsetX = e.clientX - rect.left;
-            const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+    video.addEventListener('timeupdate', () => {
+        if (video.duration) {
+            const percentage = (video.currentTime / video.duration) * 100;
             progress.style.width = percentage + '%';
             progressThumb.style.left = percentage + '%';
-            if (video.duration) {
-                video.currentTime = (percentage / 100) * video.duration;
-            }
         }
-
-        function updateVolume(e) {
-            const rect = volumeSlider.getBoundingClientRect();
-            const offsetX = e.clientX - rect.left;
-            const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
-            volumeProgress.style.width = percentage + '%';
-            volumeThumb.style.left = percentage + '%';
-            video.volume = percentage / 100;
-        }
-
-        volumeControl.addEventListener('click', () => {
-            video.muted = !video.muted;
-            volumeControl.innerHTML = video.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
-        });
-
-        volumeSlider.addEventListener('mousedown', (e) => {
-            isVolumeDragging = true;
-            updateVolume(e);
-        });
-
-        function setVolumeSlider() {
-            const volumePercentage = video.volume * 100;
-            volumeProgress.style.width = volumePercentage + '%';
-            volumeThumb.style.left = volumePercentage + '%';
-        }
-
-        fullscreenButton.addEventListener('click', () => {
-            if (video.requestFullscreen) {
-                video.requestFullscreen();
-            } else if (video.webkitRequestFullscreen) {
-                video.webkitRequestFullscreen();
-            } else if (video.msRequestFullscreen) {
-                video.msRequestFullscreen();
-            }
-        });
-
-        video.addEventListener('waiting', () => {
-            loadingOverlay.style.display = 'flex';
-        });
-
-        video.addEventListener('playing', () => {
-            loadingOverlay.style.display = 'none';
-            updatePlayPauseButton();
-        });
-
-        video.addEventListener('pause', () => {
-            updatePlayPauseButton();
-        });
-
-        video.addEventListener('error', () => {
-            loadingOverlay.style.display = 'none';
-        });
-
-        setVolumeSlider();
     });
-    </script>
+
+    video.addEventListener('progress', () => {
+        if (video.buffered.length > 0) {
+            const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+            const bufferedPercentage = (bufferedEnd / video.duration) * 100;
+            buffered.style.width = bufferedPercentage + '%';
+        }
+    });
+
+    progressBar.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        updateProgress(e);
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        isVolumeDragging = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) updateProgress(e);
+        if (isVolumeDragging) updateVolume(e);
+    });
+
+    function updateProgress(e) {
+        const rect = progressBar.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+        progress.style.width = percentage + '%';
+        progressThumb.style.left = percentage + '%';
+        if (video.duration) {
+            video.currentTime = (percentage / 100) * video.duration;
+        }
+    }
+
+    function updateVolume(e) {
+        const rect = volumeSlider.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+        volumeProgress.style.width = percentage + '%';
+        volumeThumb.style.left = percentage + '%';
+        video.volume = percentage / 100;
+    }
+
+    volumeControl.addEventListener('click', () => {
+        video.muted = !video.muted;
+        volumeControl.innerHTML = video.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+    });
+
+    volumeSlider.addEventListener('mousedown', (e) => {
+        isVolumeDragging = true;
+        updateVolume(e);
+    });
+
+    function setVolumeSlider() {
+        const volumePercentage = video.volume * 100;
+        volumeProgress.style.width = volumePercentage + '%';
+        volumeThumb.style.left = volumePercentage + '%';
+    }
+
+    fullscreenButton.addEventListener('click', () => {
+        if (video.requestFullscreen) {
+            video.requestFullscreen();
+        } else if (video.webkitRequestFullscreen) {
+            video.webkitRequestFullscreen();
+        } else if (video.msRequestFullscreen) {
+            video.msRequestFullscreen();
+        }
+    });
+
+    video.addEventListener('waiting', () => {
+        loadingOverlay.style.display = 'flex';
+    });
+
+    video.addEventListener('playing', () => {
+        loadingOverlay.style.display = 'none';
+        updatePlayPauseButton();
+    });
+
+    video.addEventListener('pause', () => {
+        updatePlayPauseButton();
+    });
+
+    video.addEventListener('error', () => {
+        loadingOverlay.style.display = 'none';
+    });
+
+    setVolumeSlider();
+});
+</script>
+
 </body>
 </html>
