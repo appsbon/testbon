@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<title>MOVIE HUB</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+    margin:0;
+    padding:0;
+    background:#0b0b0b;
+    color:#fff;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    min-height:100vh;
+}
+
+/* =========================
+   HEADER
+========================= */
+.header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:#111;
+    border-bottom:1px solid #292929;
+    padding:15px 25px;
+}
+
+.header-inner{
+    max-width:1400px;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    gap:20px;
+}
+
+.logo{
+    color:#fff;
+    text-decoration:none;
+    font-size:26px;
+    font-weight:900;
+    letter-spacing:1px;
+    white-space:nowrap;
+}
+
+.logo span{
+    color:#e50914;
+}
+
+.search{
+    margin-left:auto;
+    width:min(380px,45vw);
+    position:relative;
+}
+
+.search input{
+    width:100%;
+    height:40px;
+    border:1px solid #333;
+    border-radius:22px;
+    background:#1b1b1b;
+    color:#fff;
+    padding:0 45px 0 18px;
+    outline:none;
+}
+
+.search input:focus{
+    border-color:#e50914;
+}
+
+.search button{
+    position:absolute;
+    right:4px;
+    top:4px;
+    width:32px;
+    height:32px;
+    border:0;
+    border-radius:50%;
+    background:#e50914;
+    color:#fff;
+    cursor:pointer;
+}
+
+/* =========================
+   MAIN
+========================= */
+.main{
+    max-width:1400px;
+    margin:auto;
+    padding:30px 20px 60px;
+}
+
+.section-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+
+.section-title{
+    font-size:25px;
+    margin:0;
+}
+
+.section-title:before{
+    content:"";
+    display:inline-block;
+    width:4px;
+    height:24px;
+    background:#e50914;
+    margin-right:10px;
+    vertical-align:-4px;
+}
+
+.section-divider {
+    border: 0;
+    height: 1px;
+    background: #222;
+    margin: 50px 0;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+.load-more-container {
+    text-align: right;
+    margin-top: 30px;
+}
+
+.view-all-btn, .shuffle-btn {
+    background: #e50914;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.view-all-btn:hover, .shuffle-btn:hover {
+    background: #b80710;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
+}
+
+.shuffle-btn {
+    background: #222;
+    border: 1px solid #333;
+    box-shadow: none;
+}
+
+.shuffle-btn:hover {
+    background: #e50914;
+    border-color: #e50914;
+}
+
+.view-all-btn.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .load-more-container {
+        text-align: center;
+    }
+}
+
+/* =========================
+   MOVIE GRID
+========================= */
+.movie-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+    gap:22px;
+}
+
+.movie-card-link{
+    text-decoration:none;
+    color:inherit;
+    display:block;
+}
+
+.movie-card{
+    min-width:0;
+    cursor:pointer;
+    transition:transform .25s ease;
+}
+
+.movie-card:hover{
+    transform:translateY(-5px);
+}
+
+.movie-poster{
+    position:relative;
+    width:100%;
+    aspect-ratio:2/3;
+    overflow:hidden;
+    background:#181818;
+    border-radius:8px;
+}
+
+.movie-poster img{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:cover;
+    transition:transform .35s ease;
+}
+
+.movie-card:hover .movie-poster img{
+    transform:scale(1.06);
+}
+
+.play-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.38);
+    opacity:0;
+    transition:opacity .25s ease;
+}
+
+.movie-card:hover .play-overlay{
+    opacity:1;
+}
+
+.play-overlay i{
+    width:58px;
+    height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding-left:3px;
+    border-radius:50%;
+    background:#e50914;
+    color:#fff;
+    font-size:23px;
+}
+
+.movie-info{
+    padding-top:10px;
+}
+
+.movie-title{
+    font-size:15px;
+    font-weight:bold;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.movie-meta{
+    color:#999;
+    font-size:12px;
+    margin-top:6px;
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <a href="index.html" class="logo">
+            MOVIE<span>HUB</span>
+        </a>
+
+        <div class="search">
+            <input id="searchInput" type="search" placeholder="Search movies or series...">
+            <button type="button"><i class="fa-solid fa-search"></i></button>
+        </div>
+    </div>
+</header>
+
+<main class="main">
+
+    <!-- TOP ADVERTISEMENT SLOT -->
+    <div id="ad-slot-top" style="margin-bottom:30px;"></div>
+
+    <!-- LATEST MOVIES SECTION -->
+    <section>
+        <div class="section-header">
+            <h1 class="section-title">Latest Movies & Series</h1>
+        </div>
+
+        <div class="movie-grid" id="movieGrid"></div>
+
+        <div class="load-more-container">
+            <button id="viewAllBtn" class="view-all-btn">View All</button>
+        </div>
+    </section>
+
+    <hr class="section-divider">
+
+    <!-- RANDOM MOVIES SECTION -->
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">Random Pick</h2>
+            <button id="shuffleBtn" class="shuffle-btn">
+                <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+        </div>
+
+        <div class="movie-grid" id="randomGrid"></div>
+    </section>
+
+    <!-- GENRE SECTIONS CONTAINER -->
+    <div id="genreSectionsContainer"></div>
+
+    <!-- BOTTOM ADVERTISEMENT SLOT -->
+    <div id="ad-slot-bottom" style="margin-top:40px;"></div>
+
+</main>
+
+<!-- Load external movies, series, ads, and footer JS files -->
+<script src="movies.js"></script>
+<script src="series.js"></script>
+<script src="ads.js"></script>
+<script src="footer.js"></script>
+
+<!-- Main Logic -->
+<script>
+const movieGrid = document.getElementById("movieGrid");
+const randomGrid = document.getElementById("randomGrid");
+const viewAllBtn = document.getElementById("viewAllBtn");
+const shuffleBtn = document.getElementById("shuffleBtn");
+
+let visibleCount = 10;
+const batchSize = 24; 
+const randomCount = 8;
+let currentList = [];
+
+// Combine Movies and Series safely
+const allMovies = (typeof movies !== 'undefined' ? movies : []);
+const allSeries = (typeof series !== 'undefined' ? series : []);
+const combinedMedia = [...allMovies, ...allSeries];
+
+// Genres to generate automatically
+const genreList = ["Action", "Horror", "Drama"];
+
+/* Helper to Build Cards */
+function createMovieCard(item) {
+    const isSeries = !!item.episodes;
+    const itemUrl = `watch.html?id=${encodeURIComponent(item.id)}`;
+
+    const link = document.createElement("a");
+    link.href = itemUrl;
+    link.className = "movie-card-link";
+
+    link.innerHTML = `
+        <div class="movie-card">
+            <div class="movie-poster">
+                <img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" loading="lazy">
+                <div class="play-overlay">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+            </div>
+            <div class="movie-info">
+                <div class="movie-title">${escapeHtml(item.title)}</div>
+                <div class="movie-meta">
+                    ${escapeHtml(item.year || "")}
+                    ${item.genre ? " • " + escapeHtml(item.genre) : ""}
+                    ${isSeries ? " • <span style='color:#e50914;font-weight:bold;'>SERIES</span>" : ""}
+                </div>
+            </div>
+        </div>
+    `;
+    return link;
+}
+
+/* Fisher-Yates Array Shuffle */
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+/* Render Latest Media */
+function renderMovies(list) {
+    movieGrid.innerHTML = "";
+    currentList = list || [];
+
+    if(!currentList.length) {
+        movieGrid.innerHTML = '<p style="color:#888">No items found.</p>';
+        viewAllBtn.classList.add("hidden");
+        return;
+    }
+
+    const itemsToRender = currentList.slice(0, visibleCount);
+
+    itemsToRender.forEach((item) => {
+        movieGrid.appendChild(createMovieCard(item));
+    });
+
+    updateButtonState();
+}
+
+/* Render Random Media */
+function renderRandomMovies() {
+    randomGrid.innerHTML = "";
+    if (!combinedMedia.length) return;
+
+    const selected = shuffleArray(combinedMedia).slice(0, randomCount);
+    selected.forEach(item => {
+        randomGrid.appendChild(createMovieCard(item));
+    });
+}
+
+shuffleBtn.addEventListener("click", () => {
+    const icon = shuffleBtn.querySelector("i");
+    icon.style.transition = "transform 0.4s ease";
+    icon.style.transform = "rotate(360deg)";
+    setTimeout(() => {
+        icon.style.transition = "none";
+        icon.style.transform = "rotate(0deg)";
+    }, 400);
+
+    renderRandomMovies();
+});
+
+function updateButtonState() {
+    if (currentList.length <= 10) {
+        viewAllBtn.classList.add("hidden");
+    } else if (visibleCount >= currentList.length) {
+        viewAllBtn.classList.remove("hidden");
+        viewAllBtn.textContent = "Show Less";
+    } else if (visibleCount === 10) {
+        viewAllBtn.classList.remove("hidden");
+        viewAllBtn.textContent = "View All";
+    } else {
+        viewAllBtn.classList.remove("hidden");
+        viewAllBtn.textContent = "Load More";
+    }
+}
+
+viewAllBtn.addEventListener("click", () => {
+    if (visibleCount >= currentList.length) {
+        visibleCount = 10;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        visibleCount += batchSize;
+    }
+    renderMovies(currentList);
+});
+
+/* =========================================
+   GENRE SECTIONS GENERATOR
+========================================= */
+const genreState = {}; 
+
+function initGenreSections() {
+    const container = document.getElementById("genreSectionsContainer");
+    container.innerHTML = "";
+
+    genreList.forEach(genreName => {
+        const genreItems = combinedMedia.filter(m => 
+            m.genre && m.genre.toLowerCase().includes(genreName.toLowerCase())
+        );
+
+        if (genreItems.length === 0) return;
+
+        genreState[genreName] = {
+            visibleCount: 6,
+            shuffledList: shuffleArray(genreItems)
+        };
+
+        const safeId = genreName.replace(/\s+/g, '-').toLowerCase();
+
+        const section = document.createElement("section");
+        section.innerHTML = `
+            <hr class="section-divider">
+            <div class="section-header">
+                <h2 class="section-title">${escapeHtml(genreName)}</h2>
+            </div>
+            <div class="movie-grid" id="grid-genre-${safeId}"></div>
+            <div class="load-more-container">
+                <button class="view-all-btn" id="btn-genre-${safeId}">View All ${escapeHtml(genreName)}</button>
+            </div>
+        `;
+
+        container.appendChild(section);
+
+        const gridEl = document.getElementById(`grid-genre-${safeId}`);
+        const btnEl = document.getElementById(`btn-genre-${safeId}`);
+
+        renderGenreGrid(genreName, gridEl, btnEl);
+
+        btnEl.addEventListener("click", () => {
+            const state = genreState[genreName];
+            if (state.visibleCount >= state.shuffledList.length) {
+                state.visibleCount = 6;
+                section.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                state.visibleCount += batchSize;
+            }
+            renderGenreGrid(genreName, gridEl, btnEl);
+        });
+    });
+}
+
+function renderGenreGrid(genreName, gridEl, btnEl) {
+    const state = genreState[genreName];
+    gridEl.innerHTML = "";
+
+    const items = state.shuffledList.slice(0, state.visibleCount);
+    items.forEach(item => {
+        gridEl.appendChild(createMovieCard(item));
+    });
+
+    if (state.shuffledList.length <= 6) {
+        btnEl.classList.add("hidden");
+    } else if (state.visibleCount >= state.shuffledList.length) {
+        btnEl.classList.remove("hidden");
+        btnEl.textContent = `Show Less ${genreName}`;
+    } else if (state.visibleCount === 6) {
+        btnEl.classList.remove("hidden");
+        btnEl.textContent = `View All ${genreName}`;
+    } else {
+        btnEl.classList.remove("hidden");
+        btnEl.textContent = `Load More ${genreName}`;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/* Search */
+const searchInput = document.getElementById("searchInput");
+searchInput.addEventListener("input", () => {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = combinedMedia.filter(m => `${m.title} ${m.year} ${m.genre}`.toLowerCase().includes(query));
+    visibleCount = 10;
+    renderMovies(filtered);
+});
+
+// Initial renders
+renderMovies(combinedMedia);
+renderRandomMovies();
+initGenreSections();
+</script>
+
+</body>
+</html>

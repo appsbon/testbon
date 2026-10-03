@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch Movie - MOVIE HUB</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:0;background:#0b0b0b;color:#fff;font-family:Arial,sans-serif;min-height:100vh;}
+
+.header{position:sticky;top:0;z-index:100;background:#111;border-bottom:1px solid #292929;padding:15px 25px;}
+.header-inner{max-width:1400px;margin:auto;display:flex;align-items:center;justify-space:between;}
+.logo{color:#fff;text-decoration:none;font-size:26px;font-weight:900;letter-spacing:1px;}
+.logo span{color:#e50914;}
+
+.main-watch{max-width:1280px;margin:30px auto;padding:0 20px;}
+.back-btn{display:inline-flex;align-items:center;gap:8px;color:#aaa;text-decoration:none;font-size:14px;margin-bottom:20px;transition:color .2s;}
+.back-btn:hover{color:#e50914;}
+
+/* Player Container */
+.video-container{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;border:1px solid #222;}
+.video-container iframe, .video-container video{width:100%;height:100%;border:none;}
+
+/* Details Section */
+.media-details{margin-top:25px;display:flex;gap:30px;background:#141414;padding:25px;border-radius:10px;border:1px solid #222;}
+.media-poster{width:180px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.media-poster img{width:100%;height:auto;display:block;}
+.media-info h1{margin:0 0 10px;font-size:28px;}
+.media-meta{color:#e50914;font-size:14px;font-weight:bold;margin-bottom:15px;}
+.media-synopsis{color:#aaa;line-height:1.6;font-size:14px;}
+
+/* Episodes List */
+.episodes-container{margin-top:25px;background:#141414;padding:20px;border-radius:8px;border:1px solid #222;}
+.episodes-container.hidden{display:none;}
+.episodes-header{font-size:16px;font-weight:bold;margin-bottom:15px;color:#e50914;display:flex;align-items:center;gap:8px;}
+.episodes-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.episode-btn{background:#222;color:#fff;border:1px solid #333;padding:10px 18px;font-size:13px;font-weight:bold;border-radius:6px;cursor:pointer;}
+.episode-btn:hover{background:#333;}
+.episode-btn.active{background:#e50914;border-color:#e50914;}
+
+@media (max-width: 768px){
+    .media-details{flex-direction:column;}
+    .media-poster{width:140px;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <a href="index.html" class="logo">MOVIE<span>HUB</span></a>
+    </div>
+</header>
+
+<main class="main-watch">
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Homepage</a>
+
+    <!-- Top Ad Slot -->
+    <div id="ad-slot-top" style="margin-bottom:20px;"></div>
+
+    <!-- Video Player -->
+    <div class="video-container" id="videoWrapper">
+        <video id="player" controls playsinline></video>
+    </div>
+
+    <!-- Episodes Section (Series Only) -->
+    <div class="episodes-container hidden" id="episodesSection">
+        <div class="episodes-header"><i class="fa-solid fa-list"></i> Select Episode</div>
+        <div class="episodes-grid" id="episodesGrid"></div>
+    </div>
+
+    <!-- Media Info -->
+    <div class="media-details">
+        <div class="media-poster">
+            <img id="mediaPoster" src="" alt="">
+        </div>
+        <div class="media-info">
+            <h1 id="mediaTitle">Loading...</h1>
+            <div class="media-meta" id="mediaMeta"></div>
+            <p class="media-synopsis" id="mediaSynopsis"></p>
+        </div>
+    </div>
+
+    <!-- Bottom Ad Slot -->
+    <div id="ad-slot-bottom" style="margin-top:30px;"></div>
+</main>
+
+<script src="movies.js"></script>
+<script src="series.js"></script>
+<script src="ads.js"></script>
+<script src="footer.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Get query param from URL (e.g., watch.html?id=m-godfather)
+    const urlParams = new URLSearchParams(window.location.search);
+    const mediaId = urlParams.get("id");
+
+    if (!mediaId) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    // 2. Find media in movies or series database
+    const allMovies = typeof movies !== 'undefined' ? movies : [];
+    const allSeries = typeof series !== 'undefined' ? series : [];
+    
+    const foundMovie = allMovies.find(m => m.id === mediaId);
+    const foundSeries = allSeries.find(s => s.id === mediaId);
+    const item = foundMovie || foundSeries;
+
+    if (!item) {
+        document.querySelector(".main-watch").innerHTML = "<h2 style='text-align:center;margin-top:50px;'>Media Not Found</h2>";
+        return;
+    }
+
+    // 3. Update Page Document Title for SEO & Browser Tabs
+    document.title = `Watch ${item.title} - MOVIE HUB`;
+
+    // 4. Update Details UI
+    document.getElementById("mediaTitle").textContent = item.title;
+    document.getElementById("mediaPoster").src = item.poster;
+    document.getElementById("mediaPoster").alt = item.title;
+    document.getElementById("mediaMeta").textContent = `${item.year || ''} • ${item.genre || ''}`;
+    document.getElementById("mediaSynopsis").textContent = item.synopsis || "No description available.";
+
+    const player = document.getElementById("player");
+    const episodesSection = document.getElementById("episodesSection");
+    const episodesGrid = document.getElementById("episodesGrid");
+
+    // 5. Handle Video Stream vs Series Episodes
+    if (item.episodes && item.episodes.length > 0) {
+        episodesSection.classList.remove("hidden");
+        episodesGrid.innerHTML = "";
+
+        item.episodes.forEach((ep, index) => {
+            const btn = document.createElement("button");
+            btn.className = "episode-btn" + (index === 0 ? " active" : "");
+            btn.textContent = ep.name || `Episode ${index + 1}`;
+            
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".episode-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                player.src = ep.url;
+                player.play();
+            });
+
+            episodesGrid.appendChild(btn);
+        });
+
+        // Set First Episode
+        player.src = item.episodes[0].url;
+    } else {
+        episodesSection.classList.add("hidden");
+        player.src = item.video || "";
+    }
+});
+</script>
+
+</body>
+</html>
