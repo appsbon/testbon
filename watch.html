@@ -638,11 +638,8 @@ const urlParams = new URLSearchParams(window.location.search);
 const mediaId = urlParams.get('id');
 
 if (mediaId) {
-    // Strips 'm-' from the start of the ID (e.g., "m-avatar-2" becomes "avatar-2")
-    const cleanId = mediaId.replace(/^m-/, '');
-
     // Dynamically update the browser address bar without reloading
-    const cleanUrl = `${window.location.origin}/watch/${encodeURIComponent(cleanId)}`;
+    const cleanUrl = `${window.location.origin}/watch/${encodeURIComponent(mediaId)}`;
     window.history.replaceState({}, document.title, cleanUrl);
 }
 </script>
