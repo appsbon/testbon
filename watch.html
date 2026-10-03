@@ -21,8 +21,8 @@
             object-fit: cover;
             max-width: 1280px;
             height: 720px;
-            overflow: hidden; /* Ensures no extra space outside the video shows */
-            border: 5px solid #000; /* Border with desired color and thickness */
+            overflow: hidden;
+            border: 5px solid #000;
             border-radius: 10px;
             background-color: black;
             margin: 0 auto;
@@ -31,7 +31,7 @@
         video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ensures the video covers the container */
+            object-fit: cover;
             position: absolute;
             top: 0;
             left: 0;
@@ -214,6 +214,65 @@
             }
         }
 
+        /* Series / Episode Section */
+        .episodes-section {
+            margin-top: 25px;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            display: none; /* hidden unless item is a series */
+        }
+
+        .episodes-section h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: #fff;
+        }
+
+        .episode-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .season-select {
+            padding: 8px 12px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            outline: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .episodes-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .episode-btn {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            font-size: 14px;
+        }
+
+        .episode-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .episode-btn.active {
+            background: #e50914;
+            border-color: #e50914;
+            font-weight: bold;
+        }
+
         .details-container { margin-top: 25px; background: #1f1f1f; padding: 25px; border-radius: 8px; }
         .media-title { font-size: 28px; margin-bottom: 10px; }
         .meta-info { color: #aaa; font-size: 14px; margin-bottom: 15px; }
@@ -262,6 +321,15 @@
             </div>
         </div>
 
+        <!-- Series Episodes Navigation Container -->
+        <div class="episodes-section" id="episodesSection">
+            <h3>Episodes</h3>
+            <div class="episode-controls">
+                <select class="season-select" id="seasonSelect"></select>
+            </div>
+            <div class="episodes-grid" id="episodesGrid"></div>
+        </div>
+
         <div class="details-container">
             <h1 class="media-title" id="title">Loading...</h1>
             <div class="meta-info" id="meta"></div>
@@ -274,15 +342,22 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // 1. Load Movie Data from URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         const mediaId = urlParams.get("id");
 
         const video = document.getElementById('myVideo');
         const videoSource = document.getElementById('videoSource');
+        const episodesSection = document.getElementById('episodesSection');
+        const seasonSelect = document.getElementById('seasonSelect');
+        const episodesGrid = document.getElementById('episodesGrid');
+
+        function playVideo(videoUrl) {
+            videoSource.src = videoUrl;
+            video.load();
+            video.play().catch(e => console.log('Autoplay prevented or paused:', e));
+        }
 
         if (typeof movies !== "undefined" && Array.isArray(movies)) {
-            // Find movie by matching ID or fallback to title matching
             const item = movies.find(m => 
                 (m.id && String(m.id) === String(mediaId)) || 
                 (m.title && encodeURIComponent(m.title) === mediaId)
@@ -296,16 +371,118 @@
                 if (item.poster) {
                     video.poster = item.poster;
                 }
-                if (item.video) {
-                    videoSource.src = item.video;
-                    video.load();
+
+                // Check if item is a Series or Movie
+                if (item.episodes && Array.isArray(item.episodes) && item.episodes.length > 0) {
+                    episodesSection.style.display = 'block';
+
+                    // Group episodes by season
+                    const seasons = {};
+                    item.episodes.forEach(ep => {
+                        const sNum = ep.season || 1;
+                        if (!seasons[sNum]) seasons[sNum] = [];
+                        seasons[sNum].push(ep);
+                    });
+
+                    // Populate Season Dropdown
+                    seasonSelect.innerHTML = '';
+                    Object.keys(seasons).forEach(sNum => {
+                        const opt = document.createElement('option');
+                        opt.value = sNum;
+                        opt.textContent = `Season ${sNum}`;
+                        seasonSelect.appendChild(opt);
+                    });
+
+                    function renderEpisodes(seasonNum) {
+                        episodesGrid.innerHTML = '';
+                        const currentEpisodes = seasons[seasonNum] || [];
+
+                        currentEpisodes.forEach((ep, index) => {
+                            const btn = document.createElement('button');
+                            btn.className = 'episode-btn';
+                            btn.textContent = ep.title || `Episode ${ep.episode || index + 1}`;
+                            
+                            btn.addEventListener('click', () => {
+                                document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
+                                btn.classList.add('active');
+                                playVideo(ep.video || ep.src);
+                            });
+
+                            episodesGrid.appendChild(btn);
+                        });
+
+                        // Play the first episode automatically on render
+                        if (currentEpisodes.length > 0) {
+                            const firstBtn = episodesGrid.querySelector('.episode-btn');
+                            if (firstBtn) firstBtn.classList.add('active');
+                            playVideo(currentEpisodes[0].video || currentEpisodes[0].src);
+                        }
+                    }
+
+                    seasonSelect.addEventListener('change', (e) => {
+                        renderEpisodes(e.target.value);
+                    });
+
+                    // Initial render for Season 1
+                    renderEpisodes(Object.keys(seasons)[0]);
+
+                } else if (item.seasons && Array.isArray(item.seasons)) {
+                    // Alternative data format: item.seasons = [{ season: 1, episodes: [...] }]
+                    episodesSection.style.display = 'block';
+                    seasonSelect.innerHTML = '';
+
+                    item.seasons.forEach((seasonObj, idx) => {
+                        const opt = document.createElement('option');
+                        opt.value = idx;
+                        opt.textContent = `Season ${seasonObj.season || idx + 1}`;
+                        seasonSelect.appendChild(opt);
+                    });
+
+                    function renderSeasonsFormat(seasonIdx) {
+                        episodesGrid.innerHTML = '';
+                        const eps = item.seasons[seasonIdx]?.episodes || [];
+
+                        eps.forEach((ep, epIdx) => {
+                            const btn = document.createElement('button');
+                            btn.className = 'episode-btn';
+                            btn.textContent = ep.title || `Episode ${ep.episode || epIdx + 1}`;
+
+                            btn.addEventListener('click', () => {
+                                document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
+                                btn.classList.add('active');
+                                playVideo(ep.video || ep.src);
+                            });
+
+                            episodesGrid.appendChild(btn);
+                        });
+
+                        if (eps.length > 0) {
+                            const firstBtn = episodesGrid.querySelector('.episode-btn');
+                            if (firstBtn) firstBtn.classList.add('active');
+                            playVideo(eps[0].video || eps[0].src);
+                        }
+                    }
+
+                    seasonSelect.addEventListener('change', (e) => {
+                        renderSeasonsFormat(e.target.value);
+                    });
+
+                    renderSeasonsFormat(0);
+
+                } else {
+                    // Standard Movie
+                    if (item.video) {
+                        videoSource.src = item.video;
+                        video.load();
+                    }
                 }
+
             } else {
-                document.getElementById("title").textContent = "Movie Not Found";
+                document.getElementById("title").textContent = "Item Not Found";
             }
         }
 
-        // 2. Custom Player Controls Logic
+        // Custom Player Controls Logic
         const customPlayPauseButton = document.getElementById('customPlayPauseButton');
         const playPauseButton = document.getElementById('playPauseButton');
         const progress = document.getElementById('progress');
@@ -367,12 +544,8 @@
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                updateProgress(e);
-            }
-            if (isVolumeDragging) {
-                updateVolume(e);
-            }
+            if (isDragging) updateProgress(e);
+            if (isVolumeDragging) updateVolume(e);
         });
 
         function updateProgress(e) {
@@ -427,6 +600,11 @@
 
         video.addEventListener('playing', () => {
             loadingOverlay.style.display = 'none';
+            updatePlayPauseButton();
+        });
+
+        video.addEventListener('pause', () => {
+            updatePlayPauseButton();
         });
 
         video.addEventListener('error', () => {
