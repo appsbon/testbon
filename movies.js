@@ -4,8 +4,8 @@ const movies = [
         title: "STRIKING RESCUE",
         year: "2024",
         genre: "ACTION,THRILLER,CHINA",
-        poster: "https://archive.org/download/striking-rescue-2024/STRIKING%20RESCUE%202024.png",
-	subtitle: "https://archive.org/download/striking-rescue-2024/STRIKING%20RESCUE%202024.vtt",
+        poster: "/thumbnail/striking-rescue-2024.jpg",
+	subtitle: "/subtitle/striking-rescue-2024.vtt",
         video: "https://archive.org/download/striking-rescue-2024/STRIKING%20RESCUE%202024.mp4",
         synopsis: "-"
     },
