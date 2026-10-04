@@ -10,13 +10,26 @@ const movies = [
     synopsis: "-"
   },
   {
-    id: "avatar",
-    title: "Avatar",
-    year: "2009",
-    genre: ["Action"], // Converted string to array for consistency
-    poster: "https://via.placeholder.com/300x450",
-    subtitle: "subtitles/sample_en.vtt",
-    video: "https://archive.org/download/the.-crow.-2024/The.Crow.2024.mp4",
-    synopsis: "A paraplegic Marine dispatched to the moon Pandora on a unique mission becomes torn between following his orders and protecting the world he feels is his home."
+    
+	id: "PROJECT-HAILMARY",
+    title: "Project Hail Mary",
+    year: "2026",
+    genre: ["Adventure,Sci fi,United States"], 
+    poster: "thumbnail/PROJECT-HAILMARY.jpg",
+    subtitle: "subtitles/Project-Hail-Mary-2026.vtt",
+    video: "https://archive.org/download/project-hail-mary-2026_202610/Project%20Hail%20Mary%202026.mp4",
+    synopsis: "-"
   }
 ];
+
+
+___________________________________________________
+
+	id: "avatar",
+    title: "Avatar",
+    year: "2009",
+    genre: ["Action"], 
+    poster: "thumbnail/AAAAAAA.jpg",
+    subtitle: "subtitles/AAAAAAA.vtt",
+    video: "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+    synopsis: "-"
