@@ -21,15 +21,3 @@ const movies = [
     synopsis: "-"
   }
 ];
-
-
-___________________________________________________
-
-	id: "avatar",
-    title: "Avatar",
-    year: "2009",
-    genre: ["Action"], 
-    poster: "thumbnail/AAAAAAA.jpg",
-    subtitle: "subtitles/AAAAAAA.vtt",
-    video: "aaaaaaaaaaaaaaaaaaaaaaaaaa",
-    synopsis: "-"
