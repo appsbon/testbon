@@ -64,7 +64,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s ease, background 0.2s ease;
+            transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
         }
 
         .custom-play-btn:hover {
@@ -416,19 +416,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBtn = document.getElementById('downloadBtn');
     const subtitleButton = document.getElementById('subtitleButton');
 
+    const customPlayPauseButton = document.getElementById('customPlayPauseButton');
+    const playPauseButton = document.getElementById('playPauseButton');
+    const progress = document.getElementById('progress');
+    const buffered = document.getElementById('buffered');
+    const progressThumb = document.getElementById('progressThumb');
+    const volumeControl = document.getElementById('volumeControl');
+    const volumeSlider = document.querySelector('.volume-slider');
+    const volumeProgress = document.getElementById('volumeProgress');
+    const volumeThumb = document.getElementById('volumeThumb');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    const progressBar = document.querySelector('.progress-bar');
+
     let currentVideoUrl = "";
+    let isDragging = false;
+    let isVolumeDragging = false;
 
     /* Lightweight SRT to WebVTT Converter */
     function srtToVtt(srtText) {
-        let vtt = "WEBVTT\n\n" + srtText
+        return "WEBVTT\n\n" + srtText
             .replace(/\r\n|\r|\n/g, '\n')
             .replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, '$1.$2');
-        return vtt;
     }
 
     /* Helper function to dynamically load SRT or VTT subtitle tracks */
     async function loadSubtitles(subtitleUrl) {
-        // Remove existing track elements
         const existingTracks = video.querySelectorAll('track');
         existingTracks.forEach(t => t.remove());
 
@@ -442,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let finalVttUrl = subtitleUrl;
 
-            // If it's an .srt file, fetch and convert it on the fly
             if (subtitleUrl.endsWith('.srt')) {
                 const response = await fetch(subtitleUrl);
                 if (!response.ok) throw new Error('Failed to load SRT subtitle file');
@@ -461,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             video.appendChild(track);
 
-            // Synchronize UI active state with track mode
             if (video.textTracks && video.textTracks[0]) {
                 video.textTracks[0].mode = 'showing';
                 subtitleButton.classList.add('active');
@@ -472,20 +483,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function updatePlayPauseButton() {
+        if (video.paused || video.ended) {
+            playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+            customPlayPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+            customPlayPauseButton.classList.remove('hidden');
+        } else {
+            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            customPlayPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            customPlayPauseButton.classList.add('hidden');
+        }
+    }
+
+    function togglePlay() {
+        if (video.paused || video.ended) {
+            video.play().catch(error => {
+                console.log('Playback error / autoplay restricted:', error);
+            });
+        } else {
+            video.pause();
+        }
+    }
+
     function playVideo(videoUrl, subtitleUrl = null) {
         if (!videoUrl) return;
         currentVideoUrl = videoUrl;
         
-        // Update both source tag and video element directly for maximum browser compatibility
         videoSource.src = videoUrl;
         video.src = videoUrl;
         
-        // Load subtitle dynamically
         loadSubtitles(subtitleUrl);
 
         video.load();
         
-        // Trigger play and handle browser autoplay restrictions gracefully
         const playPromise = video.play();
         if (playPromise !== undefined) {
             playPromise.catch(e => {
@@ -554,12 +584,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById("meta").textContent = [item.year, item.genre].filter(Boolean).join(" | ");
         document.getElementById("synopsis").textContent = item.synopsis || "No synopsis available.";
         
-        // Set 16:9 Landscape Poster/Thumbnail
         if (item.poster || item.backdrop || item.thumbnail) {
             video.poster = item.backdrop || item.poster || item.thumbnail;
         }
 
-        // Extract all episodes flat array regardless of structure format
         let allEpisodes = [];
 
         if (item.episodes && Array.isArray(item.episodes) && item.episodes.length > 0) {
@@ -572,7 +600,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Render Episodes Buttons if item is a series
         if (allEpisodes.length > 0) {
             episodesSection.style.display = 'block';
             episodesGrid.innerHTML = '';
@@ -593,7 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 episodesGrid.appendChild(btn);
             });
 
-            // Auto-play the first episode
             const firstBtn = episodesGrid.querySelector('.episode-btn');
             if (firstBtn) firstBtn.classList.add('active');
             const firstEpVideo = allEpisodes[0].video || allEpisodes[0].src || allEpisodes[0].url;
@@ -601,7 +627,6 @@ document.addEventListener('DOMContentLoaded', () => {
             playVideo(firstEpVideo, firstEpSub);
 
         } else {
-            // Single Video / Movie Fallback - Calls playVideo() to trigger autoplay
             const movieUrl = item.video || item.src || item.url;
             const movieSub = item.subtitle || item.subtitles || item.srt || item.vtt;
             if (movieUrl) {
@@ -614,40 +639,16 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadBtn.style.display = "none";
     }
 
-    // Custom Player Controls Logic
-    const customPlayPauseButton = document.getElementById('customPlayPauseButton');
-    const playPauseButton = document.getElementById('playPauseButton');
-    const progress = document.getElementById('progress');
-    const buffered = document.getElementById('buffered');
-    const progressThumb = document.getElementById('progressThumb');
-    const volumeControl = document.getElementById('volumeControl');
-    const volumeSlider = document.querySelector('.volume-slider');
-    const volumeProgress = document.getElementById('volumeProgress');
-    const volumeThumb = document.getElementById('volumeThumb');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const fullscreenButton = document.getElementById('fullscreenButton');
-    const progressBar = document.querySelector('.progress-bar');
-    
-    let isDragging = false;
-    let isVolumeDragging = false;
-
-    function updatePlayPauseButton() {
-        const icon = video.paused || video.ended ? 'fa-play' : 'fa-pause';
-        playPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
-        customPlayPauseButton.innerHTML = `<i class="fas ${icon}"></i>`;
-    }
-
-    function togglePlay() {
-        if (video.paused || video.ended) {
-            video.play().catch(error => console.error('Play error:', error));
-        } else {
-            video.pause();
-        }
-        updatePlayPauseButton();
-    }
-
     playPauseButton.addEventListener('click', togglePlay);
     customPlayPauseButton.addEventListener('click', togglePlay);
+    video.addEventListener('click', togglePlay);
+
+    video.addEventListener('play', updatePlayPauseButton);
+    video.addEventListener('playing', () => {
+        loadingOverlay.style.display = 'none';
+        updatePlayPauseButton();
+    });
+    video.addEventListener('pause', updatePlayPauseButton);
 
     video.addEventListener('timeupdate', () => {
         if (video.duration) {
@@ -730,20 +731,12 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingOverlay.style.display = 'flex';
     });
 
-    video.addEventListener('playing', () => {
-        loadingOverlay.style.display = 'none';
-        updatePlayPauseButton();
-    });
-
-    video.addEventListener('pause', () => {
-        updatePlayPauseButton();
-    });
-
     video.addEventListener('error', () => {
         loadingOverlay.style.display = 'none';
     });
 
     setVolumeSlider();
+    updatePlayPauseButton();
 });
 </script>
 
