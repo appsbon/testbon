@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch - StreamApp</title>
+    <title>Watch - MOVIDOZ</title>
     
     <!-- FontAwesome Icons for Custom Controls -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -35,6 +35,16 @@
             position: absolute;
             top: 0;
             left: 0;
+        }
+
+        /* Style native HTML5 Subtitle/CC Display */
+        video::cue {
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            border-radius: 4px;
+            padding: 2px 8px;
         }
 
         .custom-play-btn {
@@ -81,10 +91,20 @@
             z-index: 10;
         }
 
-        .play-btn, .volume-control, .fullscreen-btn {
+        .play-btn, .volume-control, .fullscreen-btn, .subtitle-btn {
             font-size: 22px;
             cursor: pointer;
             z-index: 15;
+        }
+
+        .subtitle-btn {
+            margin-right: 12px;
+            color: #aaa;
+            transition: color 0.2s ease;
+        }
+
+        .subtitle-btn.active {
+            color: #e50914;
         }
 
         .fullscreen-btn {
@@ -144,6 +164,7 @@
             display: flex;
             align-items: center;
             cursor: pointer;
+            margin-right: 15px;
         }
 
         .volume-slider {
@@ -308,17 +329,15 @@
 <body>
 
     <header>
-        <a href="index.html">StreamApp</a>
+        <a href="index.html">MOVIDOZ</a>
     </header>
 
     <main class="main-watch">
-        <!-- Optional Top Ad Slot -->
-        <div id="ad-slot-top" style="margin-bottom:30px;"></div>
 
         <!-- 16:9 YouTube Style Video Container -->
         <div class="video-container">
-            <video controlslist="nodownload" id="myVideo" oncontextmenu="return false;" preload="auto">
-               <source id="videoSource" src="" type="video/mp4"></source>
+            <video disablepictureinpicture controlslist="noplaybackrate" id="myVideo" oncontextmenu="return false;" preload="auto">
+               <source id="videoSource" src="" type="video/mp4">
                Your browser does not support the video tag.
             </video>
             <button class="custom-play-btn" id="customPlayPauseButton"><i class="fas fa-play"></i></button>
@@ -342,6 +361,10 @@
                         <div class="volume-thumb" id="volumeThumb"></div>
                     </div>
                 </div>
+                <!-- Subtitle (CC) Button -->
+                <div class="subtitle-btn" id="subtitleButton" title="Subtitles (CC)">
+                    <i class="fas fa-closed-captioning"></i>
+                </div>
                 <div class="fullscreen-btn" id="fullscreenButton">
                     <i class="fas fa-expand"></i>
                 </div>
@@ -361,13 +384,16 @@
             <div class="details-header">
                 <h1 class="media-title" id="title">Loading...</h1>
                 <!-- Download Button -->
-                <button class="download-btn" id="downloadBtn">
+                <button style="display:none;" class="download-btn" id="downloadBtn">
                     <i class="fas fa-download"></i> Download Video
                 </button>
             </div>
             <div class="meta-info" id="meta"></div>
             <p class="synopsis" id="synopsis"></p>
         </div>
+
+        <!-- Optional Top Ad Slot -->
+        <div id="ad-slot-top" style="margin-bottom:30px;"></div>
 
         <!-- Bottom Ad Slot -->
         <div id="ad-slot-bottom" style="margin-top:40px;"></div>
@@ -388,10 +414,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const episodesSection = document.getElementById('episodesSection');
     const episodesGrid = document.getElementById('episodesGrid');
     const downloadBtn = document.getElementById('downloadBtn');
+    const subtitleButton = document.getElementById('subtitleButton');
 
     let currentVideoUrl = "";
 
-    function playVideo(videoUrl) {
+    /* Lightweight SRT to WebVTT Converter */
+    function srtToVtt(srtText) {
+        let vtt = "WEBVTT\n\n" + srtText
+            .replace(/\r\n|\r|\n/g, '\n')
+            .replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, '$1.$2');
+        return vtt;
+    }
+
+    /* Helper function to dynamically load SRT or VTT subtitle tracks */
+    async function loadSubtitles(subtitleUrl) {
+        // Remove existing track elements
+        const existingTracks = video.querySelectorAll('track');
+        existingTracks.forEach(t => t.remove());
+
+        if (!subtitleUrl) {
+            subtitleButton.style.display = 'none';
+            return;
+        }
+
+        subtitleButton.style.display = 'block';
+
+        try {
+            let finalVttUrl = subtitleUrl;
+
+            // If it's an .srt file, fetch and convert it on the fly
+            if (subtitleUrl.endsWith('.srt')) {
+                const response = await fetch(subtitleUrl);
+                if (!response.ok) throw new Error('Failed to load SRT subtitle file');
+                const srtText = await response.text();
+                const vttText = srtToVtt(srtText);
+                const blob = new Blob([vttText], { type: 'text/vtt' });
+                finalVttUrl = URL.createObjectURL(blob);
+            }
+
+            const track = document.createElement('track');
+            track.kind = 'subtitles';
+            track.label = 'English';
+            track.srclang = 'en';
+            track.src = finalVttUrl;
+            track.default = true;
+
+            video.appendChild(track);
+
+            // Synchronize UI active state with track mode
+            if (video.textTracks && video.textTracks[0]) {
+                video.textTracks[0].mode = 'showing';
+                subtitleButton.classList.add('active');
+            }
+        } catch (error) {
+            console.error('Subtitle loading error:', error);
+            subtitleButton.style.display = 'none';
+        }
+    }
+
+    function playVideo(videoUrl, subtitleUrl = null) {
         if (!videoUrl) return;
         currentVideoUrl = videoUrl;
         
@@ -399,6 +480,9 @@ document.addEventListener('DOMContentLoaded', () => {
         videoSource.src = videoUrl;
         video.src = videoUrl;
         
+        // Load subtitle dynamically
+        loadSubtitles(subtitleUrl);
+
         video.load();
         
         // Trigger play and handle browser autoplay restrictions gracefully
@@ -410,6 +494,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
+
+    // Toggle Subtitles On / Off
+    subtitleButton.addEventListener('click', () => {
+        if (video.textTracks && video.textTracks.length > 0) {
+            const track = video.textTracks[0];
+            if (track.mode === 'showing') {
+                track.mode = 'disabled';
+                subtitleButton.classList.remove('active');
+            } else {
+                track.mode = 'showing';
+                subtitleButton.classList.add('active');
+            }
+        }
+    });
 
     // Download trigger logic
     downloadBtn.addEventListener('click', () => {
@@ -487,7 +585,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    playVideo(ep.video || ep.src || ep.url);
+                    const epVideo = ep.video || ep.src || ep.url;
+                    const epSub = ep.subtitle || ep.subtitles || ep.srt || ep.vtt;
+                    playVideo(epVideo, epSub);
                 });
 
                 episodesGrid.appendChild(btn);
@@ -496,13 +596,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Auto-play the first episode
             const firstBtn = episodesGrid.querySelector('.episode-btn');
             if (firstBtn) firstBtn.classList.add('active');
-            playVideo(allEpisodes[0].video || allEpisodes[0].src || allEpisodes[0].url);
+            const firstEpVideo = allEpisodes[0].video || allEpisodes[0].src || allEpisodes[0].url;
+            const firstEpSub = allEpisodes[0].subtitle || allEpisodes[0].subtitles || allEpisodes[0].srt || allEpisodes[0].vtt;
+            playVideo(firstEpVideo, firstEpSub);
 
         } else {
             // Single Video / Movie Fallback - Calls playVideo() to trigger autoplay
             const movieUrl = item.video || item.src || item.url;
+            const movieSub = item.subtitle || item.subtitles || item.srt || item.vtt;
             if (movieUrl) {
-                playVideo(movieUrl);
+                playVideo(movieUrl, movieSub);
             }
         }
 

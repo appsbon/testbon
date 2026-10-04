@@ -6,16 +6,16 @@
 const topAdContent = `
     <div style="background:#1a1a1a; border:1px dashed #444; border-radius:8px; padding:20px; text-align:center; color:#888;">
         <i class="fa-solid fa-rectangle-ad" style="font-size:24px; color:#e50914; margin-bottom:8px;"></i>
-        <p style="margin:0; font-size:13px; font-weight:bold;">ADVERTISEMENT (TOP BANNER)</p>
-        <span style="font-size:11px; color:#666;">Replace this HTML inside ads.js with your Google AdSense or Ad code</span>
+        <p style="margin:0; font-size:13px; font-weight:bold;">ADVERTISEMENT </p>
+        <span style="font-size:11px; color:#666;">Place your ads here</span>
     </div>
 `;
 
 const bottomAdContent = `
     <div style="background:#1a1a1a; border:1px dashed #444; border-radius:8px; padding:20px; text-align:center; color:#888;">
         <i class="fa-solid fa-rectangle-ad" style="font-size:24px; color:#e50914; margin-bottom:8px;"></i>
-        <p style="margin:0; font-size:13px; font-weight:bold;">ADVERTISEMENT (BOTTOM BANNER)</p>
-        <span style="font-size:11px; color:#666;">Replace this HTML inside ads.js with your Google AdSense or Ad code</span>
+        <p style="margin:0; font-size:13px; font-weight:bold;">ADVERTISEMENT</p>
+        <span style="font-size:11px; color:#666;">PLace your ads here</span>
     </div>
 `;
 

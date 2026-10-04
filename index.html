@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#000000">
-<title>MOVIE HUB</title>
+<title>MOVI DOZ</title>
 
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -265,12 +265,14 @@ body{
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+display: none; !important
 }
 
 .movie-meta{
     color:#999;
     font-size:12px;
     margin-top:6px;
+display: none; !important
 }
 </style>
 </head>
@@ -280,7 +282,7 @@ body{
 <header class="header">
     <div class="header-inner">
         <a href="index.html" class="logo">
-            MOVIE<span>HUB</span>
+            MOVI<span>DOZ</span>
         </a>
 
         <div class="search">
@@ -298,7 +300,7 @@ body{
     <!-- LATEST MOVIES SECTION -->
     <section>
         <div class="section-header">
-            <h1 class="section-title">Latest Movies & Series</h1>
+            <h1 class="section-title">FEATURED</h1>
         </div>
 
         <div class="movie-grid" id="movieGrid"></div>
@@ -313,7 +315,7 @@ body{
     <!-- RANDOM MOVIES SECTION -->
     <section>
         <div class="section-header">
-            <h2 class="section-title">Random Pick</h2>
+            <h2 class="section-title">POPULAR TODAY</h2>
             <button id="shuffleBtn" class="shuffle-btn">
                 <i class="fa-solid fa-rotate"></i> Refresh
             </button>
@@ -343,7 +345,8 @@ const randomGrid = document.getElementById("randomGrid");
 const viewAllBtn = document.getElementById("viewAllBtn");
 const shuffleBtn = document.getElementById("shuffleBtn");
 
-let visibleCount = 10;
+const DEFAULT_GENRE_COUNT = 3; // Consistent initial view count
+let visibleCount = 4;
 const batchSize = 24; 
 const randomCount = 8;
 let currentList = [];
@@ -361,7 +364,6 @@ function createMovieCard(item) {
     const isSeries = !!item.episodes;
     const itemUrl = `watch.html?id=${encodeURIComponent(item.id)}`;
 
-    // Prefers landscape thumbnail fields (backdrop / thumbnail) over standard poster
     const thumbnailSrc = item.backdrop || item.thumbnail || item.poster || 'https://via.placeholder.com/640x360?text=No+Image';
 
     const link = document.createElement("a");
@@ -443,12 +445,12 @@ shuffleBtn.addEventListener("click", () => {
 });
 
 function updateButtonState() {
-    if (currentList.length <= 10) {
+    if (currentList.length <= DEFAULT_GENRE_COUNT) {
         viewAllBtn.classList.add("hidden");
     } else if (visibleCount >= currentList.length) {
         viewAllBtn.classList.remove("hidden");
         viewAllBtn.textContent = "Show Less";
-    } else if (visibleCount === 10) {
+    } else if (visibleCount === DEFAULT_GENRE_COUNT) {
         viewAllBtn.classList.remove("hidden");
         viewAllBtn.textContent = "View All";
     } else {
@@ -459,7 +461,7 @@ function updateButtonState() {
 
 viewAllBtn.addEventListener("click", () => {
     if (visibleCount >= currentList.length) {
-        visibleCount = 10;
+        visibleCount = DEFAULT_GENRE_COUNT;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
         visibleCount += batchSize;
@@ -484,7 +486,7 @@ function initGenreSections() {
         if (genreItems.length === 0) return;
 
         genreState[genreName] = {
-            visibleCount: 6,
+            visibleCount: DEFAULT_GENRE_COUNT,
             shuffledList: shuffleArray(genreItems)
         };
 
@@ -512,7 +514,7 @@ function initGenreSections() {
         btnEl.addEventListener("click", () => {
             const state = genreState[genreName];
             if (state.visibleCount >= state.shuffledList.length) {
-                state.visibleCount = 6;
+                state.visibleCount = DEFAULT_GENRE_COUNT;
                 section.scrollIntoView({ behavior: 'smooth' });
             } else {
                 state.visibleCount += batchSize;
@@ -531,17 +533,18 @@ function renderGenreGrid(genreName, gridEl, btnEl) {
         gridEl.appendChild(createMovieCard(item));
     });
 
-    if (state.shuffledList.length <= 6) {
+    // Show button whenever total genre items exceed initial display count (4)
+    if (state.shuffledList.length <= DEFAULT_GENRE_COUNT) {
         btnEl.classList.add("hidden");
     } else if (state.visibleCount >= state.shuffledList.length) {
         btnEl.classList.remove("hidden");
         btnEl.textContent = `Show Less ${genreName}`;
-    } else if (state.visibleCount === 6) {
+    } else if (state.visibleCount === DEFAULT_GENRE_COUNT) {
         btnEl.classList.remove("hidden");
-        btnEl.textContent = `View All ${genreName}`;
+        btnEl.textContent = `View All ${escapeHtml(genreName)}`;
     } else {
         btnEl.classList.remove("hidden");
-        btnEl.textContent = `Load More ${genreName}`;
+        btnEl.textContent = `Load More ${escapeHtml(genreName)}`;
     }
 }
 
@@ -559,7 +562,7 @@ const searchInput = document.getElementById("searchInput");
 searchInput.addEventListener("input", () => {
     const query = searchInput.value.trim().toLowerCase();
     const filtered = combinedMedia.filter(m => `${m.title} ${m.year} ${m.genre}`.toLowerCase().includes(query));
-    visibleCount = 10;
+    visibleCount = DEFAULT_GENRE_COUNT;
     renderMovies(filtered);
 });
 

@@ -3,11 +3,11 @@
 // ==========================================
 
 const siteConfig = {
-    siteName: "MOVIE HUB",
+    siteName: "MOVIDOZ",
     siteUrl: "#",
     currentYear: new Date().getFullYear(),
-    contactEmail: "contact@moviehub.com",
-    disclaimerText: "MOVIE HUB does not store any files on its server. All contents are provided by non-affiliated third parties."
+    contactEmail: "contact@movidoz.com",
+    disclaimerText: "MOVIDOZ does not store any files on its server. All contents are provided by non-affiliated third parties."
 };
 
 const footerHTML = `
@@ -207,10 +207,10 @@ const footerHTML = `
     </div>
 
     <!-- COPYRIGHT -->
-    <div class="footer-bottom">
-        <div>&copy; ${siteConfig.currentYear} ${siteConfig.siteName}. All rights reserved.</div>
-        <div>Designed for fast streaming</div>
-    </div>
+<div class="footer-bottom">
+    <div>&copy; 2025 ${siteConfig.siteName}. All rights reserved.</div>
+    <div>Designed for free streaming</div>
+</div>
 </footer>
 
 <!-- MODAL POPUP FOR LEGAL POLICIES -->
