@@ -10,7 +10,6 @@ const movies = [
     synopsis: "-"
   },
   {
-    
 	id: "PROJECT-HAILMARY",
     title: "Project Hail Mary",
     year: "2026",
