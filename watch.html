@@ -462,15 +462,15 @@ document.addEventListener('DOMContentLoaded', () => {
         subtitleUrl = String(subtitleUrl).trim();
 
         try {
+            let vttText = '';
+
             // Load the subtitle file
             const response = await fetch(subtitleUrl);
             if (!response.ok) {
                 throw new Error(`Subtitle HTTP ${response.status}`);
             }
 
-            let vttText;
-
-            // Convert SRT to VTT when necessary
+            // Convert SRT to VTT if necessary
             if (/\.srt(?:[?#].*)?$/i.test(subtitleUrl)) {
                 const srtText = await response.text();
                 vttText = srtToVtt(srtText);
@@ -478,17 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 vttText = await response.text();
             }
 
-            /*
-             * Automatically move every subtitle cue upward.
-             * line:80% positions the subtitle around 80% down
-             * from the top of the video.
-             *
-             * You do NOT need to edit your VTT files.
-             */
+            // Automatically position all subtitle cues at 90%.
+            // This means the VTT files do not need to be edited manually.
             vttText = vttText.replace(
                 /^(\d{2}:\d{2}:\d{2}\.\d{3}\s+-->\s+\d{2}:\d{2}:\d{2}\.\d{3})(.*)$/gm,
                 (match, timing, settings) => {
-                    // Keep an existing line setting if the VTT already has one
                     if (/\bline\s*:/i.test(settings)) {
                         return match;
                     }
@@ -517,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             track.addEventListener('error', () => {
-                console.error('Subtitle track failed to load:', subtitleBlobUrl);
+                console.error('Subtitle track failed to load:', subtitleUrl);
             });
 
             video.appendChild(track);
@@ -552,17 +546,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function playVideo(videoUrl, subtitleUrl = null) {
         if (!videoUrl) return;
+
         currentVideoUrl = videoUrl;
         video.pause();
-        await loadSubtitles(subtitleUrl);
+
+        // Start loading the video immediately.
+        // Subtitle loading happens separately and does not block the video.
         videoSource.src = videoUrl;
         video.src = videoUrl;
         video.load();
 
+        // Load subtitles without waiting for them.
+        loadSubtitles(subtitleUrl);
+
         // Some browsers need the track mode set again after the video reloads.
         video.addEventListener('loadedmetadata', function showSubtitleTrack() {
             video.removeEventListener('loadedmetadata', showSubtitleTrack);
-            const track = Array.from(video.textTracks).find(t => t.kind === 'subtitles');
+
+            const track = Array.from(video.textTracks).find(
+                t => t.kind === 'subtitles'
+            );
+
             if (track) {
                 track.mode = 'showing';
                 subtitleButton.classList.add('active');
