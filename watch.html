@@ -40,11 +40,14 @@
         /* Style native HTML5 Subtitle/CC Display */
         video::cue {
             background: rgba(0, 0, 0, 0.75);
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            font-size: 18px;
-            border-radius: 4px;
-            padding: 2px 8px;
+    color: #fff;
+    font-family: Arial, sans-serif;
+
+    /* Automatically scale with video size */
+    font-size: clamp(14px, 2vw, 28px);
+
+    border-radius: 4px;
+    padding: 2px 8px;
         }
 
         .custom-play-btn {
