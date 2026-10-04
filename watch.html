@@ -443,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let subtitleBlobUrl = null;
+
     async function loadSubtitles(subtitleUrl) {
         video.querySelectorAll('track').forEach(t => t.remove());
         subtitleButton.classList.remove('active');
@@ -451,6 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
             URL.revokeObjectURL(subtitleBlobUrl);
             subtitleBlobUrl = null;
         }
+
         if (!subtitleUrl) {
             subtitleButton.style.display = 'none';
             return;
@@ -458,33 +460,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
         subtitleButton.style.display = 'block';
         subtitleUrl = String(subtitleUrl).trim();
-        let trackUrl = subtitleUrl;
 
         try {
-            if (/\.srt(?:[?#].*)?$/i.test(subtitleUrl)) {
-                const response = await fetch(subtitleUrl);
-                if (!response.ok) throw new Error(`Subtitle HTTP ${response.status}`);
-                const srtText = await response.text();
-                subtitleBlobUrl = URL.createObjectURL(new Blob([srtToVtt(srtText)], {type: 'text/vtt'}));
-                trackUrl = subtitleBlobUrl;
+            // Load the subtitle file
+            const response = await fetch(subtitleUrl);
+            if (!response.ok) {
+                throw new Error(`Subtitle HTTP ${response.status}`);
             }
+
+            let vttText;
+
+            // Convert SRT to VTT when necessary
+            if (/\.srt(?:[?#].*)?$/i.test(subtitleUrl)) {
+                const srtText = await response.text();
+                vttText = srtToVtt(srtText);
+            } else {
+                vttText = await response.text();
+            }
+
+            /*
+             * Automatically move every subtitle cue upward.
+             * line:80% positions the subtitle around 80% down
+             * from the top of the video.
+             *
+             * You do NOT need to edit your VTT files.
+             */
+            vttText = vttText.replace(
+                /^(\d{2}:\d{2}:\d{2}\.\d{3}\s+-->\s+\d{2}:\d{2}:\d{2}\.\d{3})(.*)$/gm,
+                (match, timing, settings) => {
+                    // Keep an existing line setting if the VTT already has one
+                    if (/\bline\s*:/i.test(settings)) {
+                        return match;
+                    }
+
+                    return `${timing} line:80%${settings}`;
+                }
+            );
+
+            // Create a temporary VTT file with the new positioning
+            subtitleBlobUrl = URL.createObjectURL(
+                new Blob([vttText], { type: 'text/vtt' })
+            );
 
             const track = document.createElement('track');
             track.kind = 'subtitles';
             track.label = 'English';
             track.srclang = 'en';
-            track.src = trackUrl;
+            track.src = subtitleBlobUrl;
             track.default = true;
+
             track.addEventListener('load', () => {
                 if (track.track) {
                     track.track.mode = 'showing';
                     subtitleButton.classList.add('active');
                 }
             });
+
             track.addEventListener('error', () => {
-                console.error('Subtitle track failed to load:', trackUrl);
+                console.error('Subtitle track failed to load:', subtitleBlobUrl);
             });
+
             video.appendChild(track);
+
         } catch (error) {
             console.error('Subtitle loading error:', error);
             subtitleButton.style.display = 'none';
